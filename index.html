@@ -74,6 +74,16 @@
     .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
     .sidebar-overlay.show { display:block; }
     .main-content { width:100%; }
+
+    .view { padding:16px !important; overflow-x:auto; }
+    .topbar { padding:10px 12px; gap:8px; }
+    #topbarTitulo { height:30px !important; }
+    .busca-placa-wrap { max-width:none; min-width:0; }
+    .busca-placa-wrap input::placeholder { font-size:.78rem; }
+    .topbar .user span#userLabel { display:none; } /* nome some no celular, fica só o botão Sair */
+
+    /* Tabelas com muitas colunas ganham rolagem horizontal (dentro da própria tela) em vez de espremer o conteúdo */
+    table { min-width:640px; }
   }
 
   .view { display:none; max-width:1160px; margin:0 auto; padding:24px 28px; }
