@@ -1637,6 +1637,10 @@ function baixarPDFClick(){
 // aparelho (funciona em celular, no Chrome/Safari — abre a lista de apps e o usuário escolhe
 // o contato no WhatsApp). Em desktop essa API normalmente não existe, então cai no modo
 // alternativo: baixa o PDF e abre o WhatsApp Web com a mensagem pronta para o usuário anexar.
+function ehDispositivoMovel(){
+  return /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent);
+}
+
 function enviarPDFWhatsApp(){
   comBotaoOcupado('orcBtnPdfWpp', '⏳ Preparando...', async ()=>{
     const blob = await gerarPDFBlob();
@@ -1644,7 +1648,9 @@ function enviarPDFWhatsApp(){
     const file = new File([blob], nomeArquivo, { type: 'application/pdf' });
     const msg = montarMensagemWhatsApp();
 
-    const podeCompartilharArquivo = navigator.canShare && navigator.canShare({ files: [file] });
+    // O menu de compartilhar do Windows/desktop não lista o WhatsApp Web (só apps instalados no SO),
+    // então nesse caso já vai direto pro modo alternativo. No celular, tenta compartilhar de verdade primeiro.
+    const podeCompartilharArquivo = ehDispositivoMovel() && navigator.canShare && navigator.canShare({ files: [file] });
 
     if(podeCompartilharArquivo){
       try{
@@ -1656,7 +1662,7 @@ function enviarPDFWhatsApp(){
       }
     }
 
-    // Fallback (desktop ou navegador sem suporte a compartilhar arquivo):
+    // Fallback (desktop, ou celular sem suporte a compartilhar arquivo):
     // baixa o PDF e abre o WhatsApp com a mensagem, para o usuário anexar manualmente.
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1665,7 +1671,7 @@ function enviarPDFWhatsApp(){
     setTimeout(()=>URL.revokeObjectURL(url), 4000);
 
     abrirWhatsAppComMensagem(msg);
-    alert('Seu navegador não permite anexar o PDF automaticamente ao WhatsApp.\nO arquivo "'+nomeArquivo+'" foi baixado — anexe-o manualmente na conversa que acabou de abrir.');
+    alert('O arquivo "'+nomeArquivo+'" foi baixado.\nO WhatsApp Web abriu numa nova aba com a mensagem pronta — agora é só clicar no clipe (📎) e anexar o PDF que acabou de baixar.');
   }).catch(err=>{
     console.error('Erro ao preparar envio:', err);
     alert('Não foi possível preparar o PDF para envio (' + (err && err.message ? err.message : 'erro desconhecido') + ').');
