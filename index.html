@@ -18,7 +18,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#0a0a0a; color:#e8e0d0; font-family:'Inter',-apple-system,system-ui,sans-serif; }
+  html { font-size: 87.5%; } /* 14px base — evita fonte estourada em telas de desktop a 100% de zoom */
+  body { background:#0a0a0a; color:#e8e0d0; font-family:'Inter',-apple-system,system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
   a { color:inherit; }
 
   /* LOGIN */
@@ -32,7 +33,7 @@
 
   /* APP SHELL */
   #app { display:none; min-height:100vh; }
-  .topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:#111; border-bottom:1px solid hsl(45 20% 15%); position:sticky; top:0; z-index:10; gap:16px; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 22px; background:#111; border-bottom:1px solid hsl(45 20% 15%); position:sticky; top:0; z-index:10; gap:16px; box-shadow:0 1px 0 rgba(0,0,0,.4); }
 
   /* BUSCA RÁPIDA POR PLACA */
   .busca-placa-wrap { position:relative; flex:1; max-width:280px; }
@@ -52,13 +53,15 @@
   .btn-logout { background:transparent; border:1px solid hsl(45 20% 25%); color:#ccc; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:.75rem; }
 
   .tabs { display:flex; gap:4px; padding:10px 16px; overflow-x:auto; background:#0d0d0d; border-bottom:1px solid hsl(45 20% 14%); }
-  .tab-btn { white-space:nowrap; background:transparent; border:none; color:#999; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:600; }
+  .tab-btn { white-space:nowrap; background:transparent; border:none; color:#999; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:600; transition:background .12s ease, color .12s ease; }
   .tab-btn.active { background:hsl(45 25% 15%); color:hsl(45 68% 65%); }
 
   /* LAYOUT COM MENU LATERAL */
   .app-body { display:flex; align-items:flex-start; min-height:calc(100vh - 53px); }
-  .sidebar { width:220px; flex-shrink:0; background:#0d0d0d; border-right:1px solid hsl(45 20% 14%); padding:14px 10px; position:sticky; top:53px; height:calc(100vh - 53px); overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
-  .sidebar .tab-btn { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:10px 12px; margin-bottom:0; }
+  .sidebar { width:216px; flex-shrink:0; background:#0d0d0d; border-right:1px solid hsl(45 20% 14%); padding:16px 10px; position:sticky; top:53px; height:calc(100vh - 53px); overflow-y:auto; display:flex; flex-direction:column; gap:2px; }
+  .sidebar .tab-btn { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 12px; margin-bottom:0; border-left:3px solid transparent; border-radius:6px; color:#999; }
+  .sidebar .tab-btn:hover { background:#161616; color:#ccc; }
+  .sidebar .tab-btn.active { background:linear-gradient(90deg, hsl(45 40% 16%), hsl(45 25% 13%)); color:hsl(45 68% 68%); border-left-color:hsl(45 68% 55%); }
   .main-content { flex:1; min-width:0; }
 
   .btn-menu-toggle { display:none; background:transparent; border:1px solid hsl(45 20% 25%); color:#ccc; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:.9rem; }
@@ -73,31 +76,34 @@
     .main-content { width:100%; }
   }
 
-  .view { display:none; max-width:1100px; margin:0 auto; padding:20px; }
+  .view { display:none; max-width:1160px; margin:0 auto; padding:24px 28px; }
   .view.active { display:block; }
 
-  .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
-  .kpi { background:#141414; border:1px solid hsl(45 20% 18%); border-radius:12px; padding:16px; }
-  .kpi .n { font-size:1.6rem; font-weight:700; color:hsl(45 68% 60%); }
-  .kpi .l { font-size:.75rem; color:#999; margin-top:2px; }
+  .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+  .kpi { background:linear-gradient(155deg, #161616, #121212); border:1px solid hsl(45 20% 18%); border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .kpi .n { font-size:1.5rem; font-weight:700; color:hsl(45 68% 60%); letter-spacing:-.01em; }
+  .kpi .l { font-size:.72rem; color:#999; margin-top:3px; text-transform:uppercase; letter-spacing:.04em; }
 
-  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-  .section-header h2 { font-size:1.1rem; color:hsl(45 68% 65%); }
+  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid hsl(45 20% 14%); }
+  .section-header h2 { font-size:1.05rem; color:#f0ead8; font-weight:700; letter-spacing:-.01em; }
+  .section-header h2::before { content:''; display:inline-block; width:4px; height:14px; background:hsl(45 68% 50%); margin-right:8px; border-radius:2px; vertical-align:-1px; }
 
-  .btn { cursor:pointer; border:none; border-radius:8px; padding:9px 14px; font-size:.85rem; font-weight:600; }
+  .btn { cursor:pointer; border:none; border-radius:7px; padding:9px 14px; font-size:.83rem; font-weight:600; transition:filter .12s ease, transform .05s ease; }
+  .btn:hover { filter:brightness(1.12); }
+  .btn:active { transform:translateY(1px); }
   .btn-add { background:hsl(45 68% 50%); color:#0a0a0a; }
-  .btn-edit { background:hsl(45 25% 15%); color:hsl(45 68% 65%); padding:6px 10px; font-size:.75rem; }
-  .btn-del { background:#3a1414; color:#e88; padding:6px 10px; font-size:.75rem; }
-  .btn-primary { background:hsl(45 68% 50%); color:#0a0a0a; font-size:1rem; padding:12px 20px; width:100%; }
-  .btn-secondary { background:hsl(45 25% 15%); color:hsl(45 68% 65%); font-size:.9rem; padding:10px 16px; width:100%; }
+  .btn-edit { background:hsl(45 25% 15%); color:hsl(45 68% 65%); padding:6px 10px; font-size:.74rem; }
+  .btn-del { background:#3a1414; color:#e88; padding:6px 10px; font-size:.74rem; }
+  .btn-primary { background:hsl(45 68% 50%); color:#0a0a0a; font-size:.95rem; padding:12px 20px; width:100%; }
+  .btn-secondary { background:hsl(45 25% 15%); color:hsl(45 68% 65%); font-size:.88rem; padding:10px 16px; width:100%; }
 
-  table { width:100%; border-collapse:collapse; background:#141414; border:1px solid hsl(45 20% 18%); border-radius:12px; overflow:hidden; }
-  thead th { text-align:left; background:hsl(45 25% 12%); color:hsl(45 68% 70%); font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; padding:10px 12px; }
-  tbody td { padding:10px 12px; border-top:1px solid hsl(45 20% 14%); font-size:.85rem; }
-  tbody tr:hover { background:#171717; }
-  .empty-row td { text-align:center; color:#666; padding:24px; }
+  table { width:100%; border-collapse:collapse; background:#141414; border:1px solid hsl(45 20% 16%); border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+  thead th { text-align:left; background:#191919; color:hsl(45 40% 65%); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; padding:10px 12px; font-weight:700; border-bottom:1px solid hsl(45 20% 16%); }
+  tbody td { padding:10px 12px; border-top:1px solid hsl(45 20% 12%); font-size:.83rem; color:#d8d0bc; }
+  tbody tr:hover { background:#181818; }
+  .empty-row td { text-align:center; color:#666; padding:26px; font-size:.83rem; }
   .actions-cell { display:flex; gap:6px; }
-  .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:.7rem; font-weight:600; border:1px solid transparent; }
+  .badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:.68rem; font-weight:700; border:1px solid transparent; letter-spacing:.02em; }
   .badge-blue { background:rgba(59,130,246,.15); color:#60a5fa; border-color:rgba(59,130,246,.3); }
   .badge-amber { background:rgba(245,158,11,.15); color:#fbbf24; border-color:rgba(245,158,11,.3); }
   .badge-green { background:rgba(34,197,94,.15); color:#4ade80; border-color:rgba(34,197,94,.3); }
@@ -106,7 +112,7 @@
   /* MODAL */
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:100; padding:16px; }
   .modal-overlay.show { display:flex; }
-  .modal-box { background:#141414; border:1px solid hsl(45 20% 20%); border-radius:14px; padding:22px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; }
+  .modal-box { background:#161616; border:1px solid hsl(45 20% 20%); border-radius:12px; padding:22px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.5); }
   .modal-box h3 { color:hsl(45 68% 65%); font-size:1.05rem; margin-bottom:14px; }
   .modal-box label { display:block; font-size:.75rem; color:#aaa; margin-bottom:4px; margin-top:10px; }
   .modal-box input, .modal-box select, .modal-box textarea { width:100%; background:#0e0e0e; border:1px solid hsl(45 20% 20%); color:#e8e0d0; padding:8px 10px; border-radius:8px; font-size:.9rem; font-family:inherit; }
@@ -119,7 +125,7 @@
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
 
   /* GERADOR DE ORÇAMENTO */
-  .orc-card { background:#141414; border:1px solid hsl(45 20% 18%); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .orc-card { background:#151515; border:1px solid hsl(45 20% 16%); border-radius:10px; padding:16px 18px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.25); }
   .orc-card h3 { color:hsl(45 68% 65%); font-size:1rem; margin-bottom:12px; }
   .orc-card label { display:block; font-size:.75rem; color:#aaa; margin-bottom:4px; margin-top:8px; }
   .orc-card input, .orc-card select, .orc-card textarea { width:100%; background:#0e0e0e; border:1px solid hsl(45 20% 20%); color:#e8e0d0; padding:8px 10px; border-radius:8px; font-size:.9rem; font-family:inherit; }
@@ -1888,7 +1894,16 @@ async function salvarModal(){
       if(error) throw error;
       if(tipo === 'os'){
         const registroAntigo = db.os.find(o=>o.id===id);
-        await aplicarBaixaEstoque(registroAntigo?.itens_pecas, osItensPecasAtual);
+        // Se a OS está sendo cancelada agora, devolve tudo ao estoque (como se não tivesse peça nenhuma usada).
+        // Se estava cancelada e voltou a ficar ativa, desconta tudo de novo (como se estivesse usando do zero).
+        let itensAntigosParaComparar = registroAntigo?.itens_pecas || [];
+        let itensNovosParaComparar = osItensPecasAtual;
+        if(obj.status === 'cancelada' && registroAntigo?.status !== 'cancelada'){
+          itensNovosParaComparar = [];
+        } else if(obj.status !== 'cancelada' && registroAntigo?.status === 'cancelada'){
+          itensAntigosParaComparar = [];
+        }
+        await aplicarBaixaEstoque(itensAntigosParaComparar, itensNovosParaComparar);
       }
     } else {
       obj.empresa_id = meuPerfil.empresa_id;
