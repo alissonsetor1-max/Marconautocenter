@@ -362,7 +362,7 @@
     <div id="orcamentoPreview">
       <div class="doc-header">
         <div style="display:flex;align-items:center;gap:12px">
-          <img id="orcPLogo" src="" alt="" style="display:none;height:48px;max-width:130px;object-fit:contain">
+          <img id="orcPLogo" src="" alt="" style="display:none;height:68px;max-width:200px;object-fit:contain">
           <div>
             <h1 id="orcPEmpNome">Marcon Auto Center</h1>
             <div class="empresa-sub" id="orcPEmpContato"></div>
@@ -1343,14 +1343,21 @@ async function gerarOrcamento(){
   const {totPecas, totServicos} = calcularTotaisOrc();
   const totGeral = totPecas + totServicos;
 
-  document.getElementById('orcPEmpNome').textContent = document.getElementById('orcEmpNome').value || 'Marcon Auto Center';
+  const nomeH1 = document.getElementById('orcPEmpNome');
+  nomeH1.textContent = document.getElementById('orcEmpNome').value || 'Marcon Auto Center';
   const tel = document.getElementById('orcEmpTel').value;
   const end = document.getElementById('orcEmpEnd').value;
   document.getElementById('orcPEmpContato').textContent = [tel, end].filter(Boolean).join(' · ');
 
   const logoImg = document.getElementById('orcPLogo');
-  if(logoAtualBase64){ logoImg.src = logoAtualBase64; logoImg.style.display = 'inline-block'; }
-  else { logoImg.style.display = 'none'; }
+  if(logoAtualBase64){
+    logoImg.src = logoAtualBase64;
+    logoImg.style.display = 'inline-block';
+    nomeH1.style.display = 'none'; // com logo, não repete o nome da empresa em texto
+  } else {
+    logoImg.style.display = 'none';
+    nomeH1.style.display = '';
+  }
 
   document.getElementById('orcPOsNumero').textContent = document.getElementById('orcOsNumero').value ? ('OS #'+document.getElementById('orcOsNumero').value) : '';
   const dataVal = document.getElementById('orcOsData').value;
