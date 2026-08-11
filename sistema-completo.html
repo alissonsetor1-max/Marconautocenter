@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marcon Auto Center - Sistema</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0a0a; color:#e8e0d0; font-family:'Inter',-apple-system,system-ui,sans-serif; }
+  a { color:inherit; }
+
+  /* LOGIN */
+  #loginScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .login-box { background:#141414; border:1px solid hsl(45 20% 18%); border-radius:14px; padding:32px; width:100%; max-width:360px; text-align:center; }
+  .login-box h1 { color:hsl(45 68% 55%); font-size:1.4rem; margin-bottom:4px; }
+  .login-box p { color:#888; font-size:.8rem; margin-bottom:20px; }
+  .login-box input { width:100%; background:#0e0e0e; border:1px solid hsl(45 20% 20%); color:#e8e0d0; padding:10px 12px; border-radius:8px; margin-bottom:10px; font-size:.9rem; }
+  .login-box .btn-primary { width:100%; margin-top:6px; }
+  .login-hint { font-size:.7rem; color:#666; margin-top:14px; }
+
+  /* APP SHELL */
+  #app { display:none; min-height:100vh; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:#111; border-bottom:1px solid hsl(45 20% 15%); position:sticky; top:0; z-index:10; }
+  .topbar h1 { font-size:1.1rem; color:hsl(45 68% 55%); }
+  .topbar .user { font-size:.75rem; color:#999; display:flex; align-items:center; gap:10px; }
+  .btn-logout { background:transparent; border:1px solid hsl(45 20% 25%); color:#ccc; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:.75rem; }
+
+  .tabs { display:flex; gap:4px; padding:10px 16px; overflow-x:auto; background:#0d0d0d; border-bottom:1px solid hsl(45 20% 14%); }
+  .tab-btn { white-space:nowrap; background:transparent; border:none; color:#999; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:600; }
+  .tab-btn.active { background:hsl(45 25% 15%); color:hsl(45 68% 65%); }
+
+  /* LAYOUT COM MENU LATERAL */
+  .app-body { display:flex; align-items:flex-start; min-height:calc(100vh - 53px); }
+  .sidebar { width:220px; flex-shrink:0; background:#0d0d0d; border-right:1px solid hsl(45 20% 14%); padding:14px 10px; position:sticky; top:53px; height:calc(100vh - 53px); overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
+  .sidebar .tab-btn { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:10px 12px; margin-bottom:0; }
+  .main-content { flex:1; min-width:0; }
+
+  .btn-menu-toggle { display:none; background:transparent; border:1px solid hsl(45 20% 25%); color:#ccc; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:.9rem; }
+
+  @media (max-width:768px){
+    .app-body { flex-direction:column; }
+    .btn-menu-toggle { display:inline-block; }
+    .sidebar { position:fixed; top:0; left:0; height:100vh; width:240px; z-index:50; transform:translateX(-100%); transition:transform .2s ease; box-shadow:2px 0 12px rgba(0,0,0,.5); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; }
+    .sidebar-overlay.show { display:block; }
+    .main-content { width:100%; }
+  }
+
+  .view { display:none; max-width:1100px; margin:0 auto; padding:20px; }
+  .view.active { display:block; }
+
+  .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+  .kpi { background:#141414; border:1px solid hsl(45 20% 18%); border-radius:12px; padding:16px; }
+  .kpi .n { font-size:1.6rem; font-weight:700; color:hsl(45 68% 60%); }
+  .kpi .l { font-size:.75rem; color:#999; margin-top:2px; }
+
+  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .section-header h2 { font-size:1.1rem; color:hsl(45 68% 65%); }
+
+  .btn { cursor:pointer; border:none; border-radius:8px; padding:9px 14px; font-size:.85rem; font-weight:600; }
+  .btn-add { background:hsl(45 68% 50%); color:#0a0a0a; }
+  .btn-edit { background:hsl(45 25% 15%); color:hsl(45 68% 65%); padding:6px 10px; font-size:.75rem; }
+  .btn-del { background:#3a1414; color:#e88; padding:6px 10px; font-size:.75rem; }
+  .btn-primary { background:hsl(45 68% 50%); color:#0a0a0a; font-size:1rem; padding:12px 20px; width:100%; }
+  .btn-secondary { background:hsl(45 25% 15%); color:hsl(45 68% 65%); font-size:.9rem; padding:10px 16px; width:100%; }
+
+  table { width:100%; border-collapse:collapse; background:#141414; border:1px solid hsl(45 20% 18%); border-radius:12px; overflow:hidden; }
+  thead th { text-align:left; background:hsl(45 25% 12%); color:hsl(45 68% 70%); font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; padding:10px 12px; }
+  tbody td { padding:10px 12px; border-top:1px solid hsl(45 20% 14%); font-size:.85rem; }
+  tbody tr:hover { background:#171717; }
+  .empty-row td { text-align:center; color:#666; padding:24px; }
+  .actions-cell { display:flex; gap:6px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:.7rem; font-weight:600; border:1px solid transparent; }
+  .badge-blue { background:rgba(59,130,246,.15); color:#60a5fa; border-color:rgba(59,130,246,.3); }
+  .badge-amber { background:rgba(245,158,11,.15); color:#fbbf24; border-color:rgba(245,158,11,.3); }
+  .badge-green { background:rgba(34,197,94,.15); color:#4ade80; border-color:rgba(34,197,94,.3); }
+  .badge-red { background:rgba(239,68,68,.15); color:#f87171; border-color:rgba(239,68,68,.3); }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:100; padding:16px; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:#141414; border:1px solid hsl(45 20% 20%); border-radius:14px; padding:22px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; }
+  .modal-box h3 { color:hsl(45 68% 65%); font-size:1.05rem; margin-bottom:14px; }
+  .modal-box label { display:block; font-size:.75rem; color:#aaa; margin-bottom:4px; margin-top:10px; }
+  .modal-box input, .modal-box select, .modal-box textarea { width:100%; background:#0e0e0e; border:1px solid hsl(45 20% 20%); color:#e8e0d0; padding:8px 10px; border-radius:8px; font-size:.9rem; font-family:inherit; }
+  .modal-actions { display:flex; gap:8px; margin-top:18px; }
+  .modal-actions .btn { flex:1; }
+
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:hsl(45 68% 50%); color:#0a0a0a; padding:10px 18px; border-radius:8px; font-size:.85rem; font-weight:600; z-index:200; display:none; }
+
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr!important;} }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
+
+  /* GERADOR DE ORÇAMENTO */
+  .orc-card { background:#141414; border:1px solid hsl(45 20% 18%); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .orc-card h3 { color:hsl(45 68% 65%); font-size:1rem; margin-bottom:12px; }
+  .orc-card label { display:block; font-size:.75rem; color:#aaa; margin-bottom:4px; margin-top:8px; }
+  .orc-card input, .orc-card select, .orc-card textarea { width:100%; background:#0e0e0e; border:1px solid hsl(45 20% 20%); color:#e8e0d0; padding:8px 10px; border-radius:8px; font-size:.9rem; font-family:inherit; }
+  .orc-card textarea { resize:vertical; min-height:50px; }
+  .item-row { display:grid; grid-template-columns:1fr 60px 90px 90px 30px; gap:6px; align-items:end; margin-bottom:6px; }
+  .item-row.servico { grid-template-columns:1fr 100px 30px; }
+  .btn-pdf { background:#b8860b; color:#0a0a0a; font-size:1rem; padding:12px 20px; width:100%; margin-top:10px; }
+  .btn-pdf:disabled { opacity:.6; cursor:wait; }
+  .btn-wpp { background:#1f8a3d; color:#fff; font-size:1rem; padding:12px 20px; width:100%; margin-top:10px; }
+  .orc-totais { display:flex; justify-content:space-between; padding:6px 0; font-size:.9rem; }
+  .orc-totais.total { font-size:1.1rem; font-weight:700; color:hsl(45 68% 60%); border-top:1px solid hsl(45 20% 20%); margin-top:6px; padding-top:10px; }
+
+  #orcamentoPreview { display:none; background:#fff; color:#111; border-radius:12px; padding:28px; }
+  #orcamentoPreview.show { display:block; }
+  .doc-header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #b8860b; padding-bottom:14px; margin-bottom:18px; }
+  .doc-header h1 { color:#111; font-size:1.4rem; }
+  .doc-header .empresa-sub { color:#555; font-size:.75rem; margin-top:2px; }
+  .doc-header .os-numero { text-align:right; }
+  .doc-header .os-numero .n { font-size:1.1rem; font-weight:700; color:#b8860b; }
+  .doc-header .os-numero .d { font-size:.75rem; color:#555; }
+  .doc-section { margin-bottom:16px; }
+  .doc-section h3 { font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:#b8860b; border-bottom:1px solid #ddd; padding-bottom:4px; margin-bottom:8px; }
+  .doc-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; font-size:.85rem; }
+  .doc-grid div b { color:#333; }
+  table.doc-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  table.doc-table th { text-align:left; background:#f2f2f2; padding:6px 8px; font-size:.72rem; text-transform:uppercase; color:#555; }
+  table.doc-table td { padding:6px 8px; border-bottom:1px solid #eee; }
+  table.doc-table td.num, table.doc-table th.num { text-align:right; }
+  .doc-totais { margin-top:10px; margin-left:auto; width:260px; }
+  .doc-totais div { display:flex; justify-content:space-between; font-size:.85rem; padding:3px 0; }
+  .doc-totais .final { font-weight:700; font-size:1.05rem; color:#b8860b; border-top:2px solid #b8860b; margin-top:6px; padding-top:8px; }
+  .doc-obs { font-size:.8rem; color:#555; margin-top:14px; }
+  .doc-footer { margin-top:24px; text-align:center; font-size:.72rem; color:#888; border-top:1px solid #eee; padding-top:10px; }
+  .validade { font-size:.75rem; color:#a00; margin-top:6px; }
+
+  @media print {
+    body { background:#fff; padding:0; }
+    .no-print, .topbar, .tabs { display:none !important; }
+    #orcamentoPreview { display:block !important; border-radius:0; padding:0; }
+    .view { max-width:100%; padding:0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN (demo local, sem backend) -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>🔧 Marcon Auto Center</h1>
+    <p>Acesso ao sistema</p>
+    <input id="loginUser" placeholder="Usuário" value="admin">
+    <input id="loginPass" type="password" placeholder="Senha" value="admin">
+    <button class="btn btn-primary" onclick="fazerLogin()">Entrar</button>
+    <div class="login-hint">Rascunho local: login não é validado contra servidor.<br>Os dados ficam salvos apenas neste navegador (localStorage).</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="btn-menu-toggle" onclick="toggleSidebar()">☰</button>
+      <h1>🔧 Marcon Auto Center</h1>
+    </div>
+    <div class="user">
+      <span id="userLabel"></span>
+      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="tabs">
+      <button class="tab-btn" data-view="dashboard">📊 Dashboard</button>
+      <button class="tab-btn" data-view="os">🧾 Ordens de Serviço</button>
+      <button class="tab-btn" data-view="agendamentos">📅 Agendamentos</button>
+      <button class="tab-btn" data-view="clientes">👤 Clientes</button>
+      <button class="tab-btn" data-view="veiculos">🚗 Veículos</button>
+      <button class="tab-btn" data-view="mecanicos">🔧 Mecânicos</button>
+      <button class="tab-btn" data-view="pecas">⚙️ Peças</button>
+      <button class="tab-btn" data-view="orcamento">📄 Gerar Orçamento</button>
+    </div>
+
+    <div class="main-content">
+
+  <!-- DASHBOARD -->
+  <div class="view" id="view-dashboard">
+    <div class="cards-grid" id="dashKpis"></div>
+    <div class="section-header"><h2>Ordens de Serviço recentes</h2></div>
+    <table><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Valor</th></tr></thead>
+    <tbody id="dashOsBody"></tbody></table>
+  </div>
+
+  <!-- CLIENTES -->
+  <div class="view" id="view-clientes">
+    <div class="section-header"><h2>Clientes</h2><button class="btn btn-add" onclick="abrirModal('cliente')">+ Novo cliente</button></div>
+    <table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Documento</th><th></th></tr></thead>
+    <tbody id="clientesBody"></tbody></table>
+  </div>
+
+  <!-- VEICULOS -->
+  <div class="view" id="view-veiculos">
+    <div class="section-header"><h2>Veículos</h2><button class="btn btn-add" onclick="abrirModal('veiculo')">+ Novo veículo</button></div>
+    <table><thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Ano</th><th>Cliente</th><th></th></tr></thead>
+    <tbody id="veiculosBody"></tbody></table>
+  </div>
+
+  <!-- MECANICOS -->
+  <div class="view" id="view-mecanicos">
+    <div class="section-header"><h2>Mecânicos</h2><button class="btn btn-add" onclick="abrirModal('mecanico')">+ Novo mecânico</button></div>
+    <table><thead><tr><th>Nome</th><th>Especialidade</th><th>Telefone</th><th>Status</th><th></th></tr></thead>
+    <tbody id="mecanicosBody"></tbody></table>
+  </div>
+
+  <!-- PECAS -->
+  <div class="view" id="view-pecas">
+    <div class="section-header"><h2>Peças / Estoque</h2><button class="btn btn-add" onclick="abrirModal('peca')">+ Nova peça</button></div>
+    <table><thead><tr><th>Nome</th><th>Categoria</th><th>Custo</th><th>Venda</th><th>Estoque</th><th></th></tr></thead>
+    <tbody id="pecasBody"></tbody></table>
+  </div>
+
+  <!-- AGENDAMENTOS -->
+  <div class="view" id="view-agendamentos">
+    <div class="section-header"><h2>Agendamentos</h2><button class="btn btn-add" onclick="abrirModal('agendamento')">+ Novo agendamento</button></div>
+    <table><thead><tr><th>Data</th><th>Horário</th><th>Cliente</th><th>Veículo</th><th>Mecânico</th><th>Status</th><th></th></tr></thead>
+    <tbody id="agendamentosBody"></tbody></table>
+  </div>
+
+  <!-- ORDENS DE SERVICO -->
+  <div class="view" id="view-os">
+    <div class="section-header"><h2>Ordens de Serviço</h2><button class="btn btn-add" onclick="abrirModal('os')">+ Nova OS</button></div>
+    <table><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Mecânico</th><th>Status</th><th>Valor</th><th></th></tr></thead>
+    <tbody id="osBody"></tbody></table>
+  </div>
+
+  <!-- ORÇAMENTO (integrado, funcional) -->
+  <div class="view" id="view-orcamento">
+    <div class="section-header"><h2>Gerar Orçamento em PDF</h2></div>
+
+    <div class="no-print">
+      <div class="orc-card">
+        <h3>Dados da Empresa</h3>
+        <div class="grid2">
+          <div><label>Nome da oficina</label><input id="orcEmpNome" value="Marcon Auto Center"></div>
+          <div><label>Telefone / WhatsApp da oficina</label><input id="orcEmpTel" placeholder="(00) 00000-0000"></div>
+        </div>
+        <label>Endereço</label><input id="orcEmpEnd" placeholder="Rua, número - Bairro - Cidade/UF">
+      </div>
+
+      <div class="orc-card">
+        <h3>Ordem de Serviço</h3>
+        <div class="grid2">
+          <div><label>Vincular a uma OS existente (opcional)</label>
+            <select id="orcOsVinculada" onchange="preencherDaOS()">
+              <option value="">— Preencher manualmente —</option>
+            </select>
+          </div>
+          <div><label>Número da OS</label><input id="orcOsNumero" placeholder="Ex: 2026-0145"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Data</label><input id="orcOsData" type="date"></div>
+          <div><label>Validade do orçamento (dias)</label><input id="orcOsValidade" type="number" min="1" value="7"></div>
+        </div>
+      </div>
+
+      <div class="orc-card">
+        <h3>Cliente e Veículo</h3>
+        <div class="grid2">
+          <div><label>Cliente cadastrado (opcional)</label>
+            <select id="orcClienteSelect" onchange="preencherCliente()">
+              <option value="">— Preencher manualmente —</option>
+            </select>
+          </div>
+          <div><label>Veículo cadastrado (opcional)</label>
+            <select id="orcVeiculoSelect" onchange="preencherVeiculo()">
+              <option value="">— Preencher manualmente —</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid2">
+          <div><label>Nome do cliente *</label><input id="orcCliNome"></div>
+          <div><label>Telefone do cliente</label><input id="orcCliTel" placeholder="(00) 00000-0000"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Placa</label><input id="orcVeiPlaca" style="text-transform:uppercase"></div>
+          <div><label>Ano</label><input id="orcVeiAno"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Marca</label><input id="orcVeiMarca"></div>
+          <div><label>Modelo</label><input id="orcVeiModelo"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Cor</label><input id="orcVeiCor"></div>
+          <div><label>KM</label><input id="orcVeiKm"></div>
+        </div>
+        <label>Mecânico responsável</label><input id="orcMecNome">
+      </div>
+
+      <div class="orc-card">
+        <h3>Problema / Diagnóstico</h3>
+        <label>Problema relatado</label>
+        <textarea id="orcDescProblema"></textarea>
+        <label>Diagnóstico</label>
+        <textarea id="orcDiagnostico"></textarea>
+      </div>
+
+      <div class="orc-card">
+        <h3>Peças</h3>
+        <div id="orcPecasList"></div>
+        <button class="btn btn-add" onclick="addPecaOrc()">+ Adicionar peça</button>
+      </div>
+
+      <div class="orc-card">
+        <h3>Serviços / Mão de obra</h3>
+        <div id="orcServicosList"></div>
+        <button class="btn btn-add" onclick="addServicoOrc()">+ Adicionar serviço</button>
+      </div>
+
+      <div class="orc-card">
+        <h3>Totais e Observações</h3>
+        <div class="orc-totais"><span>Total peças</span><span id="orcTotPecas">R$ 0,00</span></div>
+        <div class="orc-totais"><span>Total mão de obra</span><span id="orcTotServicos">R$ 0,00</span></div>
+        <div class="orc-totais total"><span>TOTAL GERAL</span><span id="orcTotGeral">R$ 0,00</span></div>
+        <label>Observações / condições de pagamento</label>
+        <textarea id="orcObs" placeholder="Ex: Pagamento à vista com 5% de desconto. Aceita cartão em até 3x."></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="gerarOrcamento()">📄 Gerar Orçamento</button>
+    </div>
+
+    <!-- PREVIEW / IMPRESSÃO -->
+    <div id="orcamentoPreview">
+      <div class="doc-header">
+        <div>
+          <h1 id="orcPEmpNome">Marcon Auto Center</h1>
+          <div class="empresa-sub" id="orcPEmpContato"></div>
+        </div>
+        <div class="os-numero">
+          <div class="n">ORÇAMENTO</div>
+          <div class="d" id="orcPOsNumero"></div>
+          <div class="d" id="orcPOsData"></div>
+        </div>
+      </div>
+
+      <div class="doc-section">
+        <h3>Cliente e Veículo</h3>
+        <div class="doc-grid">
+          <div><b>Cliente:</b> <span id="orcPCliNome"></span></div>
+          <div><b>Telefone:</b> <span id="orcPCliTel"></span></div>
+          <div><b>Veículo:</b> <span id="orcPVeiculo"></span></div>
+          <div><b>Placa:</b> <span id="orcPPlaca"></span></div>
+          <div><b>KM:</b> <span id="orcPKm"></span></div>
+          <div><b>Mecânico:</b> <span id="orcPMecanico"></span></div>
+        </div>
+      </div>
+
+      <div class="doc-section" id="orcPDiagSection">
+        <h3>Problema relatado / Diagnóstico</h3>
+        <div style="font-size:.85rem" id="orcPProblema"></div>
+        <div style="font-size:.85rem; margin-top:4px" id="orcPDiag"></div>
+      </div>
+
+      <div class="doc-section" id="orcPPecasSection">
+        <h3>Peças</h3>
+        <table class="doc-table">
+          <thead><tr><th>Descrição</th><th class="num">Qtd</th><th class="num">Preço unit.</th><th class="num">Subtotal</th></tr></thead>
+          <tbody id="orcPPecasBody"></tbody>
+        </table>
+      </div>
+
+      <div class="doc-section" id="orcPServicosSection">
+        <h3>Serviços / Mão de obra</h3>
+        <table class="doc-table">
+          <thead><tr><th>Descrição</th><th class="num">Valor</th></tr></thead>
+          <tbody id="orcPServicosBody"></tbody>
+        </table>
+      </div>
+
+      <div class="doc-totais">
+        <div><span>Total peças</span><span id="orcPTotPecas"></span></div>
+        <div><span>Total mão de obra</span><span id="orcPTotServicos"></span></div>
+        <div class="final"><span>TOTAL</span><span id="orcPTotGeral"></span></div>
+      </div>
+
+      <div class="doc-obs" id="orcPObsSection">
+        <b>Observações:</b> <span id="orcPObs"></span>
+      </div>
+      <div class="validade" id="orcPValidade"></div>
+
+      <div class="doc-footer">Orçamento gerado por Marcon Auto Center · Sujeito a alteração após verificação técnica</div>
+    </div>
+
+    <div class="no-print" id="orcPostGerarBtns" style="display:none">
+      <button class="btn btn-pdf" id="orcBtnBaixarPdf" onclick="baixarPDFClick()">⬇️ Baixar PDF</button>
+      <button class="btn btn-wpp" id="orcBtnPdfWpp" onclick="enviarPDFWhatsApp()">📎 Enviar PDF pelo WhatsApp</button>
+      <button class="btn btn-secondary" onclick="enviarWhatsAppOrc()" style="margin-top:10px">💬 Enviar só a mensagem (sem PDF)</button>
+      <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn btn-add" style="width:100%;margin-top:10px" onclick="voltarEdicaoOrc()">← Voltar e editar</button>
+    </div>
+  </div>
+    </div> <!-- /main-content -->
+  </div> <!-- /app-body -->
+</div>
+
+<!-- MODAL GENÉRICO -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==========================================================
+   SISTEMA MARCON AUTO CENTER — rascunho local (localStorage)
+   Sem backend real. Feito para uso imediato/demo em 1 arquivo.
+   ========================================================== */
+
+const DB_KEY = 'marcon_db_v1';
+const defaultDb = { clientes:[], veiculos:[], mecanicos:[], pecas:[], agendamentos:[], os:[] };
+
+function loadDb(){
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if(!raw) return structuredClone(defaultDb);
+    return { ...structuredClone(defaultDb), ...JSON.parse(raw) };
+  } catch(e){ return structuredClone(defaultDb); }
+}
+function saveDb(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+let db = loadDb();
+let editing = null; // { tipo, id }
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatCurrency(v){ v = parseFloat(v)||0; return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v); }
+function formatDate(d){ if(!d) return '-'; return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(window._toastTimer); window._toastTimer=setTimeout(()=>t.style.display='none',2200); }
+
+/* ---------------- LOGIN ---------------- */
+function fazerLogin(){
+  const u = document.getElementById('loginUser').value.trim();
+  if(!u){ alert('Informe um usuário.'); return; }
+  sessionStorage.setItem('marcon_user', u);
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('userLabel').textContent = '👤 ' + u;
+  renderAll();
+}
+function fazerLogout(){
+  sessionStorage.removeItem('marcon_user');
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+}
+window.addEventListener('DOMContentLoaded', ()=>{
+  const u = sessionStorage.getItem('marcon_user');
+  if(u){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('userLabel').textContent = '👤 ' + u;
+    renderAll();
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> switchView(btn.dataset.view));
+  });
+  switchView('dashboard');
+});
+
+/* ---------------- NAVEGAÇÃO ---------------- */
+function switchView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const btn = document.querySelector(`.tab-btn[data-view="${name}"]`);
+  if(btn) btn.classList.add('active');
+  fecharSidebarMobile();
+}
+
+function toggleSidebar(){
+  document.getElementById('tabs').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+function fecharSidebarMobile(){
+  document.getElementById('tabs').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+/* ---------------- RENDER ---------------- */
+function renderAll(){
+  renderDashboard();
+  renderClientes();
+  renderVeiculos();
+  renderMecanicos();
+  renderPecas();
+  renderAgendamentos();
+  renderOS();
+  preencherSelectsOrcamento();
+}
+
+function statusBadge(status, map){
+  const c = map[status] || {label:status, cls:'badge-blue'};
+  return `<span class="badge ${c.cls}">${c.label}</span>`;
+}
+const osStatusMap = {
+  aberta:{label:'Aberta',cls:'badge-blue'}, em_andamento:{label:'Em Andamento',cls:'badge-amber'},
+  concluida:{label:'Concluída',cls:'badge-green'}, cancelada:{label:'Cancelada',cls:'badge-red'}
+};
+const agStatusMap = {
+  agendado:{label:'Agendado',cls:'badge-blue'}, confirmado:{label:'Confirmado',cls:'badge-blue'},
+  em_andamento:{label:'Em Andamento',cls:'badge-amber'}, concluido:{label:'Concluído',cls:'badge-green'}, cancelado:{label:'Cancelado',cls:'badge-red'}
+};
+const mecStatusMap = { disponivel:{label:'Disponível',cls:'badge-green'}, ocupado:{label:'Ocupado',cls:'badge-amber'}, inativo:{label:'Inativo',cls:'badge-red'} };
+
+function clienteNome(id){ return db.clientes.find(c=>c.id===id)?.nome || '-'; }
+function veiculoLabel(id){ const v = db.veiculos.find(v=>v.id===id); return v ? `${v.placa} - ${v.marca||''} ${v.modelo||''}`.trim() : '-'; }
+function mecanicoNome(id){ return db.mecanicos.find(m=>m.id===id)?.nome || '-'; }
+
+function renderDashboard(){
+  const kpis = document.getElementById('dashKpis');
+  const totalOsAbertas = db.os.filter(o=>o.status!=='concluida' && o.status!=='cancelada').length;
+  const faturamentoTotal = db.os.reduce((s,o)=> s + (parseFloat(o.valor_total)||0), 0);
+  kpis.innerHTML = `
+    <div class="kpi"><div class="n">${db.clientes.length}</div><div class="l">Clientes</div></div>
+    <div class="kpi"><div class="n">${db.veiculos.length}</div><div class="l">Veículos</div></div>
+    <div class="kpi"><div class="n">${totalOsAbertas}</div><div class="l">OS em aberto</div></div>
+    <div class="kpi"><div class="n">${formatCurrency(faturamentoTotal)}</div><div class="l">Faturamento total (OS)</div></div>
+  `;
+  const body = document.getElementById('dashOsBody');
+  const recentes = [...db.os].sort((a,b)=> (b.data_entrada||'').localeCompare(a.data_entrada||'')).slice(0,6);
+  body.innerHTML = recentes.length ? recentes.map(o=>`
+    <tr><td>${escapeHtml(o.numero||'-')}</td><td>${escapeHtml(clienteNome(o.cliente_id))}</td><td>${escapeHtml(veiculoLabel(o.veiculo_id))}</td>
+    <td>${statusBadge(o.status, osStatusMap)}</td><td>${formatCurrency(o.valor_total)}</td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="5">Nenhuma OS cadastrada ainda.</td></tr>`;
+}
+
+function renderClientes(){
+  const body = document.getElementById('clientesBody');
+  body.innerHTML = db.clientes.length ? db.clientes.map(c=>`
+    <tr><td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.telefone||'-')}</td><td>${escapeHtml(c.email||'-')}</td><td>${escapeHtml(c.documento||'-')}</td>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('cliente','${c.id}')">Editar</button><button class="btn btn-del" onclick="excluir('clientes','${c.id}')">Excluir</button></td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum cliente cadastrado.</td></tr>`;
+}
+
+function renderVeiculos(){
+  const body = document.getElementById('veiculosBody');
+  body.innerHTML = db.veiculos.length ? db.veiculos.map(v=>`
+    <tr><td>${escapeHtml((v.placa||'').toUpperCase())}</td><td>${escapeHtml(v.marca||'')} ${escapeHtml(v.modelo||'')}</td><td>${escapeHtml(v.ano||'-')}</td><td>${escapeHtml(clienteNome(v.cliente_id))}</td>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('veiculo','${v.id}')">Editar</button><button class="btn btn-del" onclick="excluir('veiculos','${v.id}')">Excluir</button></td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum veículo cadastrado.</td></tr>`;
+}
+
+function renderMecanicos(){
+  const body = document.getElementById('mecanicosBody');
+  body.innerHTML = db.mecanicos.length ? db.mecanicos.map(m=>`
+    <tr><td>${escapeHtml(m.nome)}</td><td>${escapeHtml(m.especialidade||'-')}</td><td>${escapeHtml(m.telefone||'-')}</td><td>${statusBadge(m.status||'disponivel', mecStatusMap)}</td>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('mecanico','${m.id}')">Editar</button><button class="btn btn-del" onclick="excluir('mecanicos','${m.id}')">Excluir</button></td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum mecânico cadastrado.</td></tr>`;
+}
+
+function renderPecas(){
+  const body = document.getElementById('pecasBody');
+  body.innerHTML = db.pecas.length ? db.pecas.map(p=>`
+    <tr><td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.categoria||'peca')}</td><td>${formatCurrency(p.custo)}</td><td>${formatCurrency(p.preco_venda)}</td><td>${escapeHtml(p.estoque??0)}</td>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('peca','${p.id}')">Editar</button><button class="btn btn-del" onclick="excluir('pecas','${p.id}')">Excluir</button></td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="6">Nenhuma peça cadastrada.</td></tr>`;
+}
+
+function renderAgendamentos(){
+  const body = document.getElementById('agendamentosBody');
+  const lista = [...db.agendamentos].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  body.innerHTML = lista.length ? lista.map(a=>`
+    <tr><td>${formatDate(a.data)}</td><td>${escapeHtml(a.horario||'-')}</td><td>${escapeHtml(clienteNome(a.cliente_id))}</td><td>${escapeHtml(veiculoLabel(a.veiculo_id))}</td><td>${escapeHtml(mecanicoNome(a.mecanico_id))}</td>
+    <td>${statusBadge(a.status||'agendado', agStatusMap)}</td>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('agendamento','${a.id}')">Editar</button><button class="btn btn-del" onclick="excluir('agendamentos','${a.id}')">Excluir</button></td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="7">Nenhum agendamento cadastrado.</td></tr>`;
+}
+
+function renderOS(){
+  const body = document.getElementById('osBody');
+  body.innerHTML = db.os.length ? db.os.map(o=>`
+    <tr><td>${escapeHtml(o.numero||'-')}</td><td>${escapeHtml(clienteNome(o.cliente_id))}</td><td>${escapeHtml(veiculoLabel(o.veiculo_id))}</td><td>${escapeHtml(mecanicoNome(o.mecanico_id))}</td>
+    <td>${statusBadge(o.status||'aberta', osStatusMap)}</td><td>${formatCurrency(o.valor_total)}</td>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('os','${o.id}')">Editar</button><button class="btn btn-del" onclick="excluir('os','${o.id}')">Excluir</button></td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="7">Nenhuma OS cadastrada.</td></tr>`;
+}
+
+/* ---------------- EXCLUIR ---------------- */
+const tabelaMap = { clientes:'clientes', veiculos:'veiculos', mecanicos:'mecanicos', pecas:'pecas', agendamentos:'agendamentos', os:'os' };
+function excluir(tabela, id){
+  if(!confirm('Confirma excluir este registro?')) return;
+  db[tabela] = db[tabela].filter(r=>r.id!==id);
+  saveDb();
+  renderAll();
+  showToast('Registro excluído.');
+}
+
+/* ---------------- MODAIS (CRUD) ---------------- */
+function fecharModal(){ document.getElementById('modalOverlay').classList.remove('show'); editing = null; }
+
+function opcoesClientes(selectedId){
+  return db.clientes.map(c=>`<option value="${c.id}" ${c.id===selectedId?'selected':''}>${escapeHtml(c.nome)}</option>`).join('') || '<option value="">Nenhum cliente cadastrado</option>';
+}
+function opcoesVeiculos(selectedId){
+  return db.veiculos.map(v=>`<option value="${v.id}" ${v.id===selectedId?'selected':''}>${escapeHtml((v.placa||'').toUpperCase())} - ${escapeHtml(v.marca||'')} ${escapeHtml(v.modelo||'')}</option>`).join('') || '<option value="">Nenhum veículo cadastrado</option>';
+}
+function opcoesMecanicos(selectedId){
+  return db.mecanicos.map(m=>`<option value="${m.id}" ${m.id===selectedId?'selected':''}>${escapeHtml(m.nome)}</option>`).join('') || '<option value="">Nenhum mecânico cadastrado</option>';
+}
+
+function abrirModal(tipo, id){
+  editing = { tipo, id: id||null };
+  const box = document.getElementById('modalBox');
+  const registro = id ? db[tabelaMap[tipo] || (tipo+'s')].find(r=>r.id===id) : null;
+
+  const forms = {
+    cliente: () => `
+      <h3>${id?'Editar':'Novo'} Cliente</h3>
+      <label>Nome *</label><input id="f_nome" value="${escapeHtml(registro?.nome||'')}">
+      <label>Telefone</label><input id="f_telefone" value="${escapeHtml(registro?.telefone||'')}" placeholder="(00) 00000-0000">
+      <label>E-mail</label><input id="f_email" value="${escapeHtml(registro?.email||'')}">
+      <label>Documento (CPF/CNPJ)</label><input id="f_documento" value="${escapeHtml(registro?.documento||'')}">
+      <label>Endereço</label><input id="f_endereco" value="${escapeHtml(registro?.endereco||'')}">
+    `,
+    veiculo: () => `
+      <h3>${id?'Editar':'Novo'} Veículo</h3>
+      <label>Cliente</label><select id="f_cliente_id"><option value="">-</option>${opcoesClientes(registro?.cliente_id)}</select>
+      <label>Placa *</label><input id="f_placa" value="${escapeHtml(registro?.placa||'')}" style="text-transform:uppercase">
+      <div class="grid2">
+        <div><label>Marca</label><input id="f_marca" value="${escapeHtml(registro?.marca||'')}"></div>
+        <div><label>Modelo</label><input id="f_modelo" value="${escapeHtml(registro?.modelo||'')}"></div>
+      </div>
+      <div class="grid2">
+        <div><label>Ano</label><input id="f_ano" value="${escapeHtml(registro?.ano||'')}"></div>
+        <div><label>Cor</label><input id="f_cor" value="${escapeHtml(registro?.cor||'')}"></div>
+      </div>
+      <label>Quilometragem</label><input id="f_km" type="number" value="${escapeHtml(registro?.quilometragem||'')}">
+    `,
+    mecanico: () => `
+      <h3>${id?'Editar':'Novo'} Mecânico</h3>
+      <label>Nome *</label><input id="f_nome" value="${escapeHtml(registro?.nome||'')}">
+      <label>Especialidade</label><input id="f_especialidade" value="${escapeHtml(registro?.especialidade||'')}">
+      <label>Telefone</label><input id="f_telefone" value="${escapeHtml(registro?.telefone||'')}">
+      <label>Status</label>
+      <select id="f_status">
+        <option value="disponivel" ${registro?.status==='disponivel'?'selected':''}>Disponível</option>
+        <option value="ocupado" ${registro?.status==='ocupado'?'selected':''}>Ocupado</option>
+        <option value="inativo" ${registro?.status==='inativo'?'selected':''}>Inativo</option>
+      </select>
+    `,
+    peca: () => `
+      <h3>${id?'Editar':'Nova'} Peça</h3>
+      <label>Nome *</label><input id="f_nome" value="${escapeHtml(registro?.nome||'')}">
+      <div class="grid2">
+        <div><label>Categoria</label>
+          <select id="f_categoria">
+            <option value="peca" ${(!registro||registro?.categoria==='peca')?'selected':''}>Peça</option>
+            <option value="pneu" ${registro?.categoria==='pneu'?'selected':''}>Pneu</option>
+            <option value="oleo" ${registro?.categoria==='oleo'?'selected':''}>Óleo</option>
+          </select>
+        </div>
+        <div><label>Fornecedor</label><input id="f_fornecedor" value="${escapeHtml(registro?.fornecedor||'')}"></div>
+      </div>
+      <div class="grid2">
+        <div><label>Custo *</label><input id="f_custo" type="number" step="0.01" value="${escapeHtml(registro?.custo??0)}"></div>
+        <div><label>Preço de venda *</label><input id="f_preco_venda" type="number" step="0.01" value="${escapeHtml(registro?.preco_venda??0)}"></div>
+      </div>
+      <div class="grid2">
+        <div><label>Estoque</label><input id="f_estoque" type="number" value="${escapeHtml(registro?.estoque??0)}"></div>
+        <div><label>Estoque mínimo</label><input id="f_estoque_minimo" type="number" value="${escapeHtml(registro?.estoque_minimo??5)}"></div>
+      </div>
+    `,
+    agendamento: () => `
+      <h3>${id?'Editar':'Novo'} Agendamento</h3>
+      <label>Cliente *</label><select id="f_cliente_id">${opcoesClientes(registro?.cliente_id)}</select>
+      <label>Veículo *</label><select id="f_veiculo_id">${opcoesVeiculos(registro?.veiculo_id)}</select>
+      <label>Mecânico *</label><select id="f_mecanico_id">${opcoesMecanicos(registro?.mecanico_id)}</select>
+      <div class="grid2">
+        <div><label>Data *</label><input id="f_data" type="date" value="${escapeHtml(registro?.data||'')}"></div>
+        <div><label>Horário *</label><input id="f_horario" type="time" value="${escapeHtml(registro?.horario||'')}"></div>
+      </div>
+      <label>Tipo de serviço</label><input id="f_tipo_servico" value="${escapeHtml(registro?.tipo_servico||'')}">
+      <label>Descrição</label><textarea id="f_descricao">${escapeHtml(registro?.descricao||'')}</textarea>
+      <label>Status</label>
+      <select id="f_status">
+        ${Object.keys(agStatusMap).map(k=>`<option value="${k}" ${registro?.status===k?'selected':''}>${agStatusMap[k].label}</option>`).join('')}
+      </select>
+    `,
+    os: () => `
+      <h3>${id?'Editar':'Nova'} Ordem de Serviço</h3>
+      <label>Número</label><input id="f_numero" value="${escapeHtml(registro?.numero||'')}" placeholder="Ex: 2026-0145">
+      <label>Cliente *</label><select id="f_cliente_id">${opcoesClientes(registro?.cliente_id)}</select>
+      <label>Veículo *</label><select id="f_veiculo_id">${opcoesVeiculos(registro?.veiculo_id)}</select>
+      <label>Mecânico</label><select id="f_mecanico_id"><option value="">-</option>${opcoesMecanicos(registro?.mecanico_id)}</select>
+      <label>Descrição do problema</label><textarea id="f_descricao_problema">${escapeHtml(registro?.descricao_problema||'')}</textarea>
+      <label>Diagnóstico</label><textarea id="f_diagnostico">${escapeHtml(registro?.diagnostico||'')}</textarea>
+      <div class="grid2">
+        <div><label>Valor peças</label><input id="f_valor_pecas" type="number" step="0.01" value="${escapeHtml(registro?.valor_pecas??0)}"></div>
+        <div><label>Valor mão de obra</label><input id="f_valor_mao_obra" type="number" step="0.01" value="${escapeHtml(registro?.valor_mao_obra??0)}"></div>
+      </div>
+      <label>Status</label>
+      <select id="f_status">
+        ${Object.keys(osStatusMap).map(k=>`<option value="${k}" ${registro?.status===k?'selected':''}>${osStatusMap[k].label}</option>`).join('')}
+      </select>
+    `
+  };
+
+  box.innerHTML = forms[tipo]() + `
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-add" onclick="salvarModal()">Salvar</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+
+function salvarModal(){
+  const { tipo, id } = editing;
+  const tabela = { cliente:'clientes', veiculo:'veiculos', mecanico:'mecanicos', peca:'pecas', agendamento:'agendamentos', os:'os' }[tipo];
+
+  let obj;
+  if(tipo==='cliente'){
+    if(!val('f_nome').trim()){ alert('Nome é obrigatório.'); return; }
+    obj = { nome:val('f_nome'), telefone:val('f_telefone'), email:val('f_email'), documento:val('f_documento'), endereco:val('f_endereco') };
+  } else if(tipo==='veiculo'){
+    if(!val('f_placa').trim()){ alert('Placa é obrigatória.'); return; }
+    obj = { cliente_id:val('f_cliente_id')||null, placa:val('f_placa').toUpperCase(), marca:val('f_marca'), modelo:val('f_modelo'), ano:val('f_ano'), cor:val('f_cor'), quilometragem:parseFloat(val('f_km'))||0 };
+  } else if(tipo==='mecanico'){
+    if(!val('f_nome').trim()){ alert('Nome é obrigatório.'); return; }
+    obj = { nome:val('f_nome'), especialidade:val('f_especialidade'), telefone:val('f_telefone'), status:val('f_status') };
+  } else if(tipo==='peca'){
+    if(!val('f_nome').trim()){ alert('Nome é obrigatório.'); return; }
+    obj = { nome:val('f_nome'), categoria:val('f_categoria'), fornecedor:val('f_fornecedor'), custo:parseFloat(val('f_custo'))||0, preco_venda:parseFloat(val('f_preco_venda'))||0, estoque:parseInt(val('f_estoque'))||0, estoque_minimo:parseInt(val('f_estoque_minimo'))||5 };
+  } else if(tipo==='agendamento'){
+    if(!val('f_cliente_id') || !val('f_veiculo_id') || !val('f_mecanico_id') || !val('f_data') || !val('f_horario')){ alert('Preencha cliente, veículo, mecânico, data e horário.'); return; }
+    obj = { cliente_id:val('f_cliente_id'), veiculo_id:val('f_veiculo_id'), mecanico_id:val('f_mecanico_id'), data:val('f_data'), horario:val('f_horario'), tipo_servico:val('f_tipo_servico'), descricao:val('f_descricao'), status:val('f_status') };
+  } else if(tipo==='os'){
+    if(!val('f_cliente_id') || !val('f_veiculo_id')){ alert('Selecione cliente e veículo.'); return; }
+    const valor_pecas = parseFloat(val('f_valor_pecas'))||0;
+    const valor_mao_obra = parseFloat(val('f_valor_mao_obra'))||0;
+    obj = { numero:val('f_numero'), cliente_id:val('f_cliente_id'), veiculo_id:val('f_veiculo_id'), mecanico_id:val('f_mecanico_id')||null,
+      descricao_problema:val('f_descricao_problema'), diagnostico:val('f_diagnostico'),
+      valor_pecas, valor_mao_obra, valor_total: valor_pecas+valor_mao_obra,
+      status:val('f_status'), data_entrada: id ? (db.os.find(o=>o.id===id)?.data_entrada || new Date().toISOString()) : new Date().toISOString() };
+  }
+
+  if(id){
+    const idx = db[tabela].findIndex(r=>r.id===id);
+    db[tabela][idx] = { ...db[tabela][idx], ...obj };
+  } else {
+    obj.id = uid();
+    db[tabela].push(obj);
+  }
+  saveDb();
+  fecharModal();
+  renderAll();
+  showToast('Salvo com sucesso.');
+}
+
+/* ==========================================================
+   GERADOR DE ORÇAMENTO (integrado ao sistema)
+   ========================================================== */
+let pecaOrcId = 0, servicoOrcId = 0;
+
+function addPecaOrc(nome='', qtd=1, preco=0){
+  pecaOrcId++;
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.id = 'orcPeca-'+pecaOrcId;
+  div.innerHTML = `
+    <div><input placeholder="Nome da peça" class="orcPecaNome" value="${escapeHtml(nome)}" oninput="calcularTotaisOrc()"></div>
+    <div><input type="number" placeholder="Qtd" class="orcPecaQtd" value="${escapeHtml(qtd)}" oninput="calcularTotaisOrc()"></div>
+    <div><input type="number" placeholder="Preço unit." class="orcPecaPreco" value="${escapeHtml(preco)}" oninput="calcularTotaisOrc()"></div>
+    <div style="font-size:.8rem;color:#999;align-self:center" class="orcPecaSub">R$ 0,00</div>
+    <button class="btn btn-del" onclick="document.getElementById('orcPeca-${pecaOrcId}').remove();calcularTotaisOrc()">×</button>
+  `;
+  document.getElementById('orcPecasList').appendChild(div);
+  calcularTotaisOrc();
+}
+
+function addServicoOrc(nome='', valor=0){
+  servicoOrcId++;
+  const div = document.createElement('div');
+  div.className = 'item-row servico';
+  div.id = 'orcServico-'+servicoOrcId;
+  div.innerHTML = `
+    <div><input placeholder="Descrição do serviço" class="orcServNome" value="${escapeHtml(nome)}" oninput="calcularTotaisOrc()"></div>
+    <div><input type="number" placeholder="Valor" class="orcServValor" value="${escapeHtml(valor)}" oninput="calcularTotaisOrc()"></div>
+    <button class="btn btn-del" onclick="document.getElementById('orcServico-${servicoOrcId}').remove();calcularTotaisOrc()">×</button>
+  `;
+  document.getElementById('orcServicosList').appendChild(div);
+  calcularTotaisOrc();
+}
+
+function calcularTotaisOrc(){
+  let totPecas = 0;
+  document.querySelectorAll('#orcPecasList .item-row').forEach(row=>{
+    const qtd = parseFloat(row.querySelector('.orcPecaQtd').value)||0;
+    const preco = parseFloat(row.querySelector('.orcPecaPreco').value)||0;
+    const sub = qtd*preco;
+    row.querySelector('.orcPecaSub').textContent = formatCurrency(sub);
+    totPecas += sub;
+  });
+  let totServicos = 0;
+  document.querySelectorAll('#orcServicosList .item-row').forEach(row=>{
+    totServicos += parseFloat(row.querySelector('.orcServValor').value)||0;
+  });
+  document.getElementById('orcTotPecas').textContent = formatCurrency(totPecas);
+  document.getElementById('orcTotServicos').textContent = formatCurrency(totServicos);
+  document.getElementById('orcTotGeral').textContent = formatCurrency(totPecas+totServicos);
+  return {totPecas, totServicos};
+}
+
+/* Popula os selects de OS/Cliente/Veículo com os registros já cadastrados no sistema */
+function preencherSelectsOrcamento(){
+  const selOs = document.getElementById('orcOsVinculada');
+  const selCli = document.getElementById('orcClienteSelect');
+  const selVei = document.getElementById('orcVeiculoSelect');
+  if(!selOs) return;
+
+  selOs.innerHTML = '<option value="">— Preencher manualmente —</option>' +
+    db.os.map(o=>`<option value="${o.id}">${escapeHtml(o.numero||'(sem número)')} — ${escapeHtml(clienteNome(o.cliente_id))}</option>`).join('');
+  selCli.innerHTML = '<option value="">— Preencher manualmente —</option>' +
+    db.clientes.map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+  selVei.innerHTML = '<option value="">— Preencher manualmente —</option>' +
+    db.veiculos.map(v=>`<option value="${v.id}">${escapeHtml((v.placa||'').toUpperCase())} - ${escapeHtml(v.marca||'')} ${escapeHtml(v.modelo||'')}</option>`).join('');
+}
+
+function preencherCliente(){
+  const id = document.getElementById('orcClienteSelect').value;
+  if(!id) return;
+  const c = db.clientes.find(c=>c.id===id);
+  if(!c) return;
+  document.getElementById('orcCliNome').value = c.nome || '';
+  document.getElementById('orcCliTel').value = c.telefone || '';
+}
+
+function preencherVeiculo(){
+  const id = document.getElementById('orcVeiculoSelect').value;
+  if(!id) return;
+  const v = db.veiculos.find(v=>v.id===id);
+  if(!v) return;
+  document.getElementById('orcVeiPlaca').value = (v.placa||'').toUpperCase();
+  document.getElementById('orcVeiMarca').value = v.marca || '';
+  document.getElementById('orcVeiModelo').value = v.modelo || '';
+  document.getElementById('orcVeiAno').value = v.ano || '';
+  document.getElementById('orcVeiCor').value = v.cor || '';
+  document.getElementById('orcVeiKm').value = v.quilometragem || '';
+  // se o veículo tem cliente vinculado e o campo de cliente ainda está vazio, preenche também
+  if(v.cliente_id && !document.getElementById('orcCliNome').value){
+    document.getElementById('orcClienteSelect').value = v.cliente_id;
+    preencherCliente();
+  }
+}
+
+function preencherDaOS(){
+  const id = document.getElementById('orcOsVinculada').value;
+  if(!id) return;
+  const o = db.os.find(o=>o.id===id);
+  if(!o) return;
+
+  document.getElementById('orcOsNumero').value = o.numero || '';
+  document.getElementById('orcDescProblema').value = o.descricao_problema || '';
+  document.getElementById('orcDiagnostico').value = o.diagnostico || '';
+  if(o.mecanico_id) document.getElementById('orcMecNome').value = mecanicoNome(o.mecanico_id);
+
+  if(o.cliente_id){
+    document.getElementById('orcClienteSelect').value = o.cliente_id;
+    preencherCliente();
+  }
+  if(o.veiculo_id){
+    document.getElementById('orcVeiculoSelect').value = o.veiculo_id;
+    preencherVeiculo();
+  }
+
+  // Se a OS já tem valores de peças/mão de obra lançados, sugere como linha única (usuário pode editar/detalhar depois)
+  if(o.valor_pecas){
+    document.querySelectorAll('#orcPecasList .item-row').forEach(r=>r.remove());
+    addPecaOrc('Peças (conforme OS #'+ (o.numero||'') +')', 1, o.valor_pecas);
+  }
+  if(o.valor_mao_obra){
+    document.querySelectorAll('#orcServicosList .item-row').forEach(r=>r.remove());
+    addServicoOrc('Mão de obra (conforme OS #'+ (o.numero||'') +')', o.valor_mao_obra);
+  }
+}
+
+function gerarOrcamento(){
+  const cliNome = document.getElementById('orcCliNome').value.trim();
+  if(!cliNome){
+    alert('Informe o nome do cliente antes de gerar o orçamento.');
+    document.getElementById('orcCliNome').focus();
+    return;
+  }
+
+  const {totPecas, totServicos} = calcularTotaisOrc();
+  const totGeral = totPecas + totServicos;
+
+  document.getElementById('orcPEmpNome').textContent = document.getElementById('orcEmpNome').value || 'Marcon Auto Center';
+  const tel = document.getElementById('orcEmpTel').value;
+  const end = document.getElementById('orcEmpEnd').value;
+  document.getElementById('orcPEmpContato').textContent = [tel, end].filter(Boolean).join(' · ');
+
+  document.getElementById('orcPOsNumero').textContent = document.getElementById('orcOsNumero').value ? ('OS #'+document.getElementById('orcOsNumero').value) : '';
+  const dataVal = document.getElementById('orcOsData').value;
+  document.getElementById('orcPOsData').textContent = dataVal ? new Date(dataVal+'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
+
+  document.getElementById('orcPCliNome').textContent = cliNome || '-';
+  document.getElementById('orcPCliTel').textContent = document.getElementById('orcCliTel').value || '-';
+  const marca = document.getElementById('orcVeiMarca').value;
+  const modelo = document.getElementById('orcVeiModelo').value;
+  const ano = document.getElementById('orcVeiAno').value;
+  const cor = document.getElementById('orcVeiCor').value;
+  document.getElementById('orcPVeiculo').textContent = [marca, modelo, ano, cor].filter(Boolean).join(' ') || '-';
+  document.getElementById('orcPPlaca').textContent = (document.getElementById('orcVeiPlaca').value || '-').toUpperCase();
+  document.getElementById('orcPKm').textContent = document.getElementById('orcVeiKm').value || '-';
+  document.getElementById('orcPMecanico').textContent = document.getElementById('orcMecNome').value || '-';
+
+  const problema = document.getElementById('orcDescProblema').value;
+  const diag = document.getElementById('orcDiagnostico').value;
+  document.getElementById('orcPProblema').innerHTML = problema ? '<b>Relato:</b> '+escapeHtml(problema) : '';
+  document.getElementById('orcPDiag').innerHTML = diag ? '<b>Diagnóstico:</b> '+escapeHtml(diag) : '';
+  document.getElementById('orcPDiagSection').style.display = (problema||diag) ? 'block' : 'none';
+
+  const pecasBody = document.getElementById('orcPPecasBody');
+  pecasBody.innerHTML = '';
+  let hasPecas = false;
+  document.querySelectorAll('#orcPecasList .item-row').forEach(row=>{
+    const nome = row.querySelector('.orcPecaNome').value;
+    const qtd = parseFloat(row.querySelector('.orcPecaQtd').value)||0;
+    const preco = parseFloat(row.querySelector('.orcPecaPreco').value)||0;
+    if(!nome) return;
+    hasPecas = true;
+    pecasBody.innerHTML += `<tr><td>${escapeHtml(nome)}</td><td class="num">${qtd}</td><td class="num">${formatCurrency(preco)}</td><td class="num">${formatCurrency(qtd*preco)}</td></tr>`;
+  });
+  document.getElementById('orcPPecasSection').style.display = hasPecas ? 'block' : 'none';
+
+  const servBody = document.getElementById('orcPServicosBody');
+  servBody.innerHTML = '';
+  let hasServicos = false;
+  document.querySelectorAll('#orcServicosList .item-row').forEach(row=>{
+    const nome = row.querySelector('.orcServNome').value;
+    const valor = parseFloat(row.querySelector('.orcServValor').value)||0;
+    if(!nome) return;
+    hasServicos = true;
+    servBody.innerHTML += `<tr><td>${escapeHtml(nome)}</td><td class="num">${formatCurrency(valor)}</td></tr>`;
+  });
+  document.getElementById('orcPServicosSection').style.display = hasServicos ? 'block' : 'none';
+
+  document.getElementById('orcPTotPecas').textContent = formatCurrency(totPecas);
+  document.getElementById('orcPTotServicos').textContent = formatCurrency(totServicos);
+  document.getElementById('orcPTotGeral').textContent = formatCurrency(totGeral);
+
+  const obs = document.getElementById('orcObs').value;
+  document.getElementById('orcPObsSection').style.display = obs ? 'block' : 'none';
+  document.getElementById('orcPObs').textContent = obs;
+
+  const validadeDias = parseInt(document.getElementById('orcOsValidade').value)||7;
+  document.getElementById('orcPValidade').textContent = `Orçamento válido por ${validadeDias} dias a partir da data de emissão.`;
+
+  document.querySelectorAll('#view-orcamento .no-print').forEach(el => { if(el.id !== 'orcPostGerarBtns') el.style.display = 'none'; });
+  document.getElementById('orcamentoPreview').classList.add('show');
+  document.getElementById('orcPostGerarBtns').style.display = 'block';
+  document.getElementById('view-orcamento').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function voltarEdicaoOrc(){
+  document.getElementById('orcamentoPreview').classList.remove('show');
+  document.getElementById('orcPostGerarBtns').style.display = 'none';
+  document.querySelectorAll('#view-orcamento .no-print').forEach(el => el.style.display = 'block');
+  document.getElementById('orcPostGerarBtns').style.display = 'none';
+}
+
+function baixarPDF(){
+  return gerarPDFBlob().then(blob=>{
+    const nomeArquivo = nomeArquivoPDF();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nomeArquivo;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  });
+}
+
+function nomeArquivoPDF(){
+  const osNum = document.getElementById('orcOsNumero').value;
+  const placa = document.getElementById('orcVeiPlaca').value.replace(/\s/g,'').toUpperCase();
+  return 'orcamento' + (osNum ? '-'+osNum.replace(/[^\w-]/g,'') : '') + (placa ? '-'+placa : '') + '.pdf';
+}
+
+function gerarPDFBlob(){
+  if(typeof html2pdf === 'undefined'){
+    return Promise.reject(new Error('Biblioteca html2pdf.js não carregou (verifique sua conexão com a internet).'));
+  }
+  const el = document.getElementById('orcamentoPreview');
+  const opt = {
+    margin:       [10, 10, 10, 10],
+    filename:     nomeArquivoPDF(),
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak:    { mode: ['css', 'legacy'] }
+  };
+  return html2pdf().set(opt).from(el).outputPdf('blob');
+}
+
+function comBotaoOcupado(btnId, textoOcupado, fn){
+  const btn = document.getElementById(btnId);
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = textoOcupado;
+  return fn().finally(()=>{
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  });
+}
+
+function baixarPDFClick(){
+  comBotaoOcupado('orcBtnBaixarPdf', '⏳ Gerando PDF...', baixarPDF)
+    .catch(err=>{
+      console.error('Erro ao gerar PDF:', err);
+      alert('Não foi possível gerar o PDF automaticamente (' + (err && err.message ? err.message : 'erro desconhecido') + ').\nUse a opção "Imprimir" e escolha "Salvar como PDF".');
+    });
+}
+
+// Tenta enviar o PDF diretamente pelo WhatsApp usando o menu de compartilhamento nativo do
+// aparelho (funciona em celular, no Chrome/Safari — abre a lista de apps e o usuário escolhe
+// o contato no WhatsApp). Em desktop essa API normalmente não existe, então cai no modo
+// alternativo: baixa o PDF e abre o WhatsApp Web com a mensagem pronta para o usuário anexar.
+function enviarPDFWhatsApp(){
+  comBotaoOcupado('orcBtnPdfWpp', '⏳ Preparando...', async ()=>{
+    const blob = await gerarPDFBlob();
+    const nomeArquivo = nomeArquivoPDF();
+    const file = new File([blob], nomeArquivo, { type: 'application/pdf' });
+    const msg = montarMensagemWhatsApp();
+
+    const podeCompartilharArquivo = navigator.canShare && navigator.canShare({ files: [file] });
+
+    if(podeCompartilharArquivo){
+      try{
+        await navigator.share({ files: [file], text: msg, title: nomeArquivo });
+        return;
+      }catch(err){
+        if(err && err.name === 'AbortError') return; // usuário cancelou o compartilhamento
+        console.error('Falha ao compartilhar PDF:', err);
+      }
+    }
+
+    // Fallback (desktop ou navegador sem suporte a compartilhar arquivo):
+    // baixa o PDF e abre o WhatsApp com a mensagem, para o usuário anexar manualmente.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nomeArquivo;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+
+    abrirWhatsAppComMensagem(msg);
+    alert('Seu navegador não permite anexar o PDF automaticamente ao WhatsApp.\nO arquivo "'+nomeArquivo+'" foi baixado — anexe-o manualmente na conversa que acabou de abrir.');
+  }).catch(err=>{
+    console.error('Erro ao preparar envio:', err);
+    alert('Não foi possível preparar o PDF para envio (' + (err && err.message ? err.message : 'erro desconhecido') + ').');
+  });
+}
+
+function montarMensagemWhatsApp(){
+  const cliNome = document.getElementById('orcCliNome').value || 'Cliente';
+  const osNum = document.getElementById('orcOsNumero').value;
+  const placa = document.getElementById('orcVeiPlaca').value.toUpperCase();
+  const veiculo = [document.getElementById('orcVeiMarca').value, document.getElementById('orcVeiModelo').value].filter(Boolean).join(' ');
+  const totGeral = document.getElementById('orcTotGeral').textContent;
+  const validadeDias = parseInt(document.getElementById('orcOsValidade').value)||7;
+
+  let msg = `Olá ${cliNome}! Segue o orçamento`;
+  if(osNum) msg += ` da OS #${osNum}`;
+  if(veiculo || placa) msg += ` referente ao veículo ${veiculo} ${placa?('placa '+placa):''}`;
+  msg += `.\n\n*Valor total: ${totGeral}*\n`;
+  msg += `Orçamento válido por ${validadeDias} dias.\n\n`;
+  msg += `Segue em anexo o PDF com todos os detalhes. Qualquer dúvida estou à disposição!\n\n- ${document.getElementById('orcEmpNome').value || 'Marcon Auto Center'}`;
+  return msg;
+}
+
+function abrirWhatsAppComMensagem(msg){
+  const cliTel = document.getElementById('orcCliTel').value.replace(/\D/g,'');
+  const numero = cliTel.length >= 10 ? (cliTel.length <= 11 ? '55'+cliTel : cliTel) : '';
+  const url = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+
+function enviarWhatsAppOrc(){
+  abrirWhatsAppComMensagem(montarMensagemWhatsApp());
+}
+
+// inicializa uma linha vazia de peça e serviço ao carregar
+addPecaOrc();
+addServicoOrc();
+</script>
+</body>
+</html>
