@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Marcon Auto Center - Sistema</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#0a0a0a; color:#e8e0d0; font-family:'Inter',-apple-system,system-ui,sans-serif; }
@@ -136,45 +137,57 @@
     #orcamentoPreview { display:block !important; border-radius:0; padding:0; }
     .view { max-width:100%; padding:0; }
   }
+
+  /* ÍCONES */
+  .icon { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vertical-align:-4px; margin-right:6px; flex-shrink:0; }
+  .icon-sm { width:15px; height:15px; margin-right:4px; vertical-align:-3px; }
+  h1 .icon { width:22px; height:22px; margin-right:8px; vertical-align:-5px; color:hsl(45 68% 55%); }
+  .login-box h1 .icon { width:26px; height:26px; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN (demo local, sem backend) -->
+<!-- LOGIN (Supabase Auth real) -->
 <div id="loginScreen">
   <div class="login-box">
-    <h1>🔧 Marcon Auto Center</h1>
-    <p>Acesso ao sistema</p>
-    <input id="loginUser" placeholder="Usuário" value="admin">
-    <input id="loginPass" type="password" placeholder="Senha" value="admin">
-    <button class="btn btn-primary" onclick="fazerLogin()">Entrar</button>
-    <div class="login-hint">Rascunho local: login não é validado contra servidor.<br>Os dados ficam salvos apenas neste navegador (localStorage).</div>
+    <h1><svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Marcon Auto Center</h1>
+    <p id="loginSubtitle">Entrar no sistema</p>
+
+    <input id="loginEmail" type="email" placeholder="E-mail" autocomplete="username">
+    <input id="loginPass" type="password" placeholder="Senha" autocomplete="current-password">
+    <input id="loginNome" placeholder="Seu nome" style="display:none">
+
+    <button class="btn btn-primary" id="btnLoginPrimary" onclick="fazerLogin()">Entrar</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="alternarModoLogin()" id="btnAlternarModo">Ainda não tenho conta — Criar conta</button>
+
+    <div class="login-hint" id="loginHint">Login real via Supabase. Seus dados ficam salvos na nuvem, não só neste navegador.</div>
   </div>
 </div>
 
 <div id="app">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px">
-      <button class="btn-menu-toggle" onclick="toggleSidebar()">☰</button>
-      <h1>🔧 Marcon Auto Center</h1>
+      <button class="btn-menu-toggle" onclick="toggleSidebar()"><svg class="icon" style="margin-right:0" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <h1><svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Marcon Auto Center</h1>
     </div>
     <div class="user">
       <span id="userLabel"></span>
-      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+      <button class="btn-logout" onclick="fazerLogout()"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
     </div>
   </div>
 
   <div class="app-body">
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="tabs">
-      <button class="tab-btn" data-view="dashboard">📊 Dashboard</button>
-      <button class="tab-btn" data-view="os">🧾 Ordens de Serviço</button>
-      <button class="tab-btn" data-view="agendamentos">📅 Agendamentos</button>
-      <button class="tab-btn" data-view="clientes">👤 Clientes</button>
-      <button class="tab-btn" data-view="veiculos">🚗 Veículos</button>
-      <button class="tab-btn" data-view="mecanicos">🔧 Mecânicos</button>
-      <button class="tab-btn" data-view="pecas">⚙️ Peças</button>
-      <button class="tab-btn" data-view="orcamento">📄 Gerar Orçamento</button>
+      <button class="tab-btn" data-view="dashboard"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg>Dashboard</button>
+      <button class="tab-btn" data-view="os"><svg class="icon" viewBox="0 0 24 24"><path d="M4 3h16v18l-3-2-3 2-3-2-3 2-3-2-1 2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ordens de Serviço</button>
+      <button class="tab-btn" data-view="agendamentos"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agendamentos</button>
+      <button class="tab-btn" data-view="clientes"><svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Clientes</button>
+      <button class="tab-btn" data-view="veiculos"><svg class="icon" viewBox="0 0 24 24"><path d="M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM3 17V11l2-5h14l2 5v6M3 11h18"/></svg>Veículos</button>
+      <button class="tab-btn" data-view="mecanicos"><svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Mecânicos</button>
+      <button class="tab-btn" data-view="pecas"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Peças</button>
+      <button class="tab-btn" data-view="orcamento"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Gerar Orçamento</button>
+      <button class="tab-btn" data-view="usuarios" id="navUsuarios" style="display:none"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Usuários</button>
     </div>
 
     <div class="main-content">
@@ -189,42 +202,42 @@
 
   <!-- CLIENTES -->
   <div class="view" id="view-clientes">
-    <div class="section-header"><h2>Clientes</h2><button class="btn btn-add" onclick="abrirModal('cliente')">+ Novo cliente</button></div>
+    <div class="section-header"><h2>Clientes</h2><button class="btn btn-add" onclick="abrirModal('cliente')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo cliente</button></div>
     <table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Documento</th><th></th></tr></thead>
     <tbody id="clientesBody"></tbody></table>
   </div>
 
   <!-- VEICULOS -->
   <div class="view" id="view-veiculos">
-    <div class="section-header"><h2>Veículos</h2><button class="btn btn-add" onclick="abrirModal('veiculo')">+ Novo veículo</button></div>
+    <div class="section-header"><h2>Veículos</h2><button class="btn btn-add" onclick="abrirModal('veiculo')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo veículo</button></div>
     <table><thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Ano</th><th>Cliente</th><th></th></tr></thead>
     <tbody id="veiculosBody"></tbody></table>
   </div>
 
   <!-- MECANICOS -->
   <div class="view" id="view-mecanicos">
-    <div class="section-header"><h2>Mecânicos</h2><button class="btn btn-add" onclick="abrirModal('mecanico')">+ Novo mecânico</button></div>
+    <div class="section-header"><h2>Mecânicos</h2><button class="btn btn-add" onclick="abrirModal('mecanico')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo mecânico</button></div>
     <table><thead><tr><th>Nome</th><th>Especialidade</th><th>Telefone</th><th>Status</th><th></th></tr></thead>
     <tbody id="mecanicosBody"></tbody></table>
   </div>
 
   <!-- PECAS -->
   <div class="view" id="view-pecas">
-    <div class="section-header"><h2>Peças / Estoque</h2><button class="btn btn-add" onclick="abrirModal('peca')">+ Nova peça</button></div>
+    <div class="section-header"><h2>Peças / Estoque</h2><button class="btn btn-add" onclick="abrirModal('peca')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova peça</button></div>
     <table><thead><tr><th>Nome</th><th>Categoria</th><th>Custo</th><th>Venda</th><th>Estoque</th><th></th></tr></thead>
     <tbody id="pecasBody"></tbody></table>
   </div>
 
   <!-- AGENDAMENTOS -->
   <div class="view" id="view-agendamentos">
-    <div class="section-header"><h2>Agendamentos</h2><button class="btn btn-add" onclick="abrirModal('agendamento')">+ Novo agendamento</button></div>
+    <div class="section-header"><h2>Agendamentos</h2><button class="btn btn-add" onclick="abrirModal('agendamento')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo agendamento</button></div>
     <table><thead><tr><th>Data</th><th>Horário</th><th>Cliente</th><th>Veículo</th><th>Mecânico</th><th>Status</th><th></th></tr></thead>
     <tbody id="agendamentosBody"></tbody></table>
   </div>
 
   <!-- ORDENS DE SERVICO -->
   <div class="view" id="view-os">
-    <div class="section-header"><h2>Ordens de Serviço</h2><button class="btn btn-add" onclick="abrirModal('os')">+ Nova OS</button></div>
+    <div class="section-header"><h2>Ordens de Serviço</h2><button class="btn btn-add" onclick="abrirModal('os')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova OS</button></div>
     <table><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Mecânico</th><th>Status</th><th>Valor</th><th></th></tr></thead>
     <tbody id="osBody"></tbody></table>
   </div>
@@ -241,6 +254,20 @@
           <div><label>Telefone / WhatsApp da oficina</label><input id="orcEmpTel" placeholder="(00) 00000-0000"></div>
         </div>
         <label>Endereço</label><input id="orcEmpEnd" placeholder="Rua, número - Bairro - Cidade/UF">
+        <label>Logo da empresa (aparece no cabeçalho do orçamento)</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+          <img id="orcLogoPreview" src="" alt="" style="display:none;height:44px;max-width:120px;object-fit:contain;background:#fff;border-radius:6px;padding:4px">
+          <input id="orcLogoInput" type="file" accept="image/png,image/jpeg,image/webp" onchange="handleLogoUpload(event)" style="flex:1">
+          <button type="button" class="btn btn-del" id="orcLogoRemover" style="display:none" onclick="removerLogo()">Remover</button>
+        </div>
+      </div>
+
+      <div class="orc-card" id="orcamentosSalvosCard" style="display:none">
+        <h3>Orçamentos salvos</h3>
+        <table style="font-size:.85rem">
+          <thead><tr><th>Data</th><th>Cliente</th><th>Status</th><th>Total</th><th></th></tr></thead>
+          <tbody id="orcamentosSalvosBody"></tbody>
+        </table>
       </div>
 
       <div class="orc-card">
@@ -321,15 +348,22 @@
         <textarea id="orcObs" placeholder="Ex: Pagamento à vista com 5% de desconto. Aceita cartão em até 3x."></textarea>
       </div>
 
-      <button class="btn btn-primary" onclick="gerarOrcamento()">📄 Gerar Orçamento</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="novoOrcamento()" style="flex:1" title="Limpa o formulário para começar um orçamento novo"><svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo</button>
+        <button class="btn btn-secondary" onclick="salvarRascunho()" style="flex:1"><svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Salvar rascunho</button>
+        <button class="btn btn-primary" onclick="gerarOrcamento()" style="flex:2"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Gerar Orçamento</button>
+      </div>
     </div>
 
     <!-- PREVIEW / IMPRESSÃO -->
     <div id="orcamentoPreview">
       <div class="doc-header">
-        <div>
-          <h1 id="orcPEmpNome">Marcon Auto Center</h1>
-          <div class="empresa-sub" id="orcPEmpContato"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <img id="orcPLogo" src="" alt="" style="display:none;height:48px;max-width:130px;object-fit:contain">
+          <div>
+            <h1 id="orcPEmpNome">Marcon Auto Center</h1>
+            <div class="empresa-sub" id="orcPEmpContato"></div>
+          </div>
         </div>
         <div class="os-numero">
           <div class="n">ORÇAMENTO</div>
@@ -387,12 +421,19 @@
     </div>
 
     <div class="no-print" id="orcPostGerarBtns" style="display:none">
-      <button class="btn btn-pdf" id="orcBtnBaixarPdf" onclick="baixarPDFClick()">⬇️ Baixar PDF</button>
-      <button class="btn btn-wpp" id="orcBtnPdfWpp" onclick="enviarPDFWhatsApp()">📎 Enviar PDF pelo WhatsApp</button>
-      <button class="btn btn-secondary" onclick="enviarWhatsAppOrc()" style="margin-top:10px">💬 Enviar só a mensagem (sem PDF)</button>
-      <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>
-      <button class="btn btn-add" style="width:100%;margin-top:10px" onclick="voltarEdicaoOrc()">← Voltar e editar</button>
+      <button class="btn btn-pdf" id="orcBtnBaixarPdf" onclick="baixarPDFClick()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar PDF</button>
+      <button class="btn btn-wpp" id="orcBtnPdfWpp" onclick="enviarPDFWhatsApp()"><svg class="icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Enviar PDF pelo WhatsApp</button>
+      <button class="btn btn-secondary" onclick="enviarWhatsAppOrc()" style="margin-top:10px"><svg class="icon" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Enviar só a mensagem (sem PDF)</button>
+      <button class="btn btn-secondary" onclick="window.print()"><svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
+      <button class="btn btn-add" style="width:100%;margin-top:10px" onclick="voltarEdicaoOrc()"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Voltar e editar</button>
     </div>
+  </div>
+
+  <!-- USUÁRIOS (somente admin) -->
+  <div class="view" id="view-usuarios">
+    <div class="section-header"><h2>Usuários</h2><button class="btn btn-add" onclick="abrirModalUsuario()"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo usuário</button></div>
+    <table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th></tr></thead>
+    <tbody id="usuariosBody"></tbody></table>
   </div>
     </div> <!-- /main-content -->
   </div> <!-- /app-body -->
@@ -407,58 +448,134 @@
 
 <script>
 /* ==========================================================
-   SISTEMA MARCON AUTO CENTER — rascunho local (localStorage)
-   Sem backend real. Feito para uso imediato/demo em 1 arquivo.
+   SISTEMA MARCON AUTO CENTER — conectado ao Supabase (nuvem)
    ========================================================== */
 
-const DB_KEY = 'marcon_db_v1';
-const defaultDb = { clientes:[], veiculos:[], mecanicos:[], pecas:[], agendamentos:[], os:[] };
+const SUPABASE_URL = 'https://hemnqexwmttttgcqpkem.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_NJgOnB8zv6v8b_24kMc-kg_GhJEFvH-';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function loadDb(){
-  try {
-    const raw = localStorage.getItem(DB_KEY);
-    if(!raw) return structuredClone(defaultDb);
-    return { ...structuredClone(defaultDb), ...JSON.parse(raw) };
-  } catch(e){ return structuredClone(defaultDb); }
-}
-function saveDb(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+const TABELAS = { clientes:'clientes', veiculos:'veiculos', mecanicos:'mecanicos', pecas:'pecas', agendamentos:'agendamentos', os:'ordens_servico' };
 
-let db = loadDb();
+let db = { clientes:[], veiculos:[], mecanicos:[], pecas:[], agendamentos:[], os:[], usuarios:[], orcamentos:[] };
+let logoAtualBase64 = null;
 let editing = null; // { tipo, id }
+let meuPerfil = null; // { id, empresa_id, nome, papel }
+let modoLogin = 'entrar'; // 'entrar' | 'criar'
 
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function escapeHtml(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Aceita tanto "150,50" (padrão BR) quanto "150.50" e devolve um número. Ignora tudo que não for dígito/vírgula/ponto/sinal.
+function parseNumeroBR(v){
+  if(v == null) return 0;
+  const limpo = String(v).trim().replace(/[^\d,.\-]/g,'').replace(',', '.');
+  const n = parseFloat(limpo);
+  return isNaN(n) ? 0 : n;
+}
 function formatCurrency(v){ v = parseFloat(v)||0; return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v); }
 function formatDate(d){ if(!d) return '-'; return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(window._toastTimer); window._toastTimer=setTimeout(()=>t.style.display='none',2200); }
 
-/* ---------------- LOGIN ---------------- */
-function fazerLogin(){
-  const u = document.getElementById('loginUser').value.trim();
-  if(!u){ alert('Informe um usuário.'); return; }
-  sessionStorage.setItem('marcon_user', u);
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('app').style.display='block';
-  document.getElementById('userLabel').textContent = '👤 ' + u;
-  renderAll();
+/* ---------------- LOGIN / CADASTRO (Supabase Auth) ---------------- */
+function alternarModoLogin(){
+  modoLogin = modoLogin === 'entrar' ? 'criar' : 'entrar';
+  const nomeField = document.getElementById('loginNome');
+  if(modoLogin === 'criar'){
+    nomeField.style.display = 'block';
+    document.getElementById('loginSubtitle').textContent = 'Criar uma conta';
+    document.getElementById('btnLoginPrimary').textContent = 'Criar conta';
+    document.getElementById('btnAlternarModo').textContent = 'Já tenho conta — Entrar';
+    document.getElementById('loginHint').textContent = 'Você receberá um e-mail de confirmação do Supabase antes de conseguir entrar.';
+  } else {
+    nomeField.style.display = 'none';
+    document.getElementById('loginSubtitle').textContent = 'Entrar no sistema';
+    document.getElementById('btnLoginPrimary').textContent = 'Entrar';
+    document.getElementById('btnAlternarModo').textContent = 'Ainda não tenho conta — Criar conta';
+    document.getElementById('loginHint').textContent = 'Login real via Supabase. Seus dados ficam salvos na nuvem, não só neste navegador.';
+  }
 }
-function fazerLogout(){
-  sessionStorage.removeItem('marcon_user');
+
+async function fazerLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginPass').value;
+  const nome = document.getElementById('loginNome').value.trim();
+  const btn = document.getElementById('btnLoginPrimary');
+
+  if(!email || !senha){ alert('Preencha e-mail e senha.'); return; }
+  if(senha.length < 6){ alert('A senha precisa ter pelo menos 6 caracteres.'); return; }
+
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Aguarde...';
+
+  try{
+    if(modoLogin === 'criar'){
+      const { data, error } = await sb.auth.signUp({ email, password: senha, options: { data: { nome: nome || email.split('@')[0] } } });
+      if(error) throw error;
+      if(data.session){
+        // Se a confirmação de e-mail estiver desativada no projeto, o Supabase já retorna
+        // sessão ativa aqui e entra direto. Caso contrário, cai no else abaixo.
+        await iniciarAppLogado();
+      } else {
+        alert('Conta criada! Verifique seu e-mail (' + email + ') para confirmar o cadastro antes de entrar.');
+        alternarModoLogin();
+      }
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+      if(error) throw error;
+      await iniciarAppLogado();
+    }
+  } catch(err){
+    console.error(err);
+    alert('Erro: ' + (err.message || 'não foi possível autenticar.'));
+  } finally {
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+
+async function fazerLogout(){
+  await sb.auth.signOut();
+  meuPerfil = null;
   document.getElementById('app').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
 }
-window.addEventListener('DOMContentLoaded', ()=>{
-  const u = sessionStorage.getItem('marcon_user');
-  if(u){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('userLabel').textContent = '👤 ' + u;
-    renderAll();
+
+async function iniciarAppLogado(){
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user){ return; }
+
+  let { data: perfil, error } = await sb.from('profiles').select('id, empresa_id, nome, papel').eq('id', user.id).single();
+
+  // Perfil pode levar um instante para ser criado pelo trigger no primeiro login após cadastro.
+  if(!perfil){
+    await new Promise(r=>setTimeout(r, 1200));
+    ({ data: perfil } = await sb.from('profiles').select('id, empresa_id, nome, papel').eq('id', user.id).single());
   }
+
+  if(!perfil || !perfil.empresa_id){
+    alert('Sua conta ainda não está vinculada a uma empresa. Fale com o administrador do sistema.');
+    await sb.auth.signOut();
+    return;
+  }
+
+  meuPerfil = perfil;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('userLabel').innerHTML = '<svg class="icon-sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + escapeHtml(perfil.nome || user.email);
+  if(perfil.papel === 'admin'){ document.getElementById('navUsuarios').style.display = ''; }
+  showToast('Bem-vindo(a), ' + (perfil.nome || user.email) + '!');
+  await carregarTudo();
+}
+
+window.addEventListener('DOMContentLoaded', async ()=>{
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> switchView(btn.dataset.view));
   });
   switchView('dashboard');
+
+  // Se já existir uma sessão válida (ex: recarregou a página), entra direto.
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    await iniciarAppLogado();
+  }
 });
 
 /* ---------------- NAVEGAÇÃO ---------------- */
@@ -481,6 +598,44 @@ function fecharSidebarMobile(){
 }
 
 /* ---------------- RENDER ---------------- */
+async function carregarTudo(){
+  try{
+    const [c, v, m, p, a, o, u, orc, cfg] = await Promise.all([
+      sb.from('clientes').select('*').order('nome'),
+      sb.from('veiculos').select('*').order('criado_em', {ascending:false}),
+      sb.from('mecanicos').select('*').order('nome'),
+      sb.from('pecas').select('*').order('nome'),
+      sb.from('agendamentos').select('*').order('data'),
+      sb.from('ordens_servico').select('*').order('data_entrada', {ascending:false}),
+      sb.from('profiles').select('id, nome, email, papel').order('nome'),
+      sb.from('orcamentos').select('*').order('atualizado_em', {ascending:false}).limit(20),
+      sb.from('empresa_config').select('*').eq('empresa_id', meuPerfil.empresa_id).maybeSingle(),
+    ]);
+    for(const [nome, res] of [['clientes',c],['veiculos',v],['mecanicos',m],['pecas',p],['agendamentos',a],['os',o],['usuarios',u],['orçamentos',orc]]){
+      if(res.error){ console.error('Erro ao carregar '+nome, res.error); showToast('Erro ao carregar '+nome); }
+    }
+    db.clientes = c.data || [];
+    db.veiculos = v.data || [];
+    db.mecanicos = m.data || [];
+    db.pecas = p.data || [];
+    db.agendamentos = a.data || [];
+    db.os = o.data || [];
+    db.usuarios = u.data || [];
+    db.orcamentos = orc.data || [];
+
+    if(cfg.data){
+      logoAtualBase64 = cfg.data.logo_base64 || null;
+      if(cfg.data.telefone && !document.getElementById('orcEmpTel').value) document.getElementById('orcEmpTel').value = cfg.data.telefone;
+      if(cfg.data.endereco && !document.getElementById('orcEmpEnd').value) document.getElementById('orcEmpEnd').value = cfg.data.endereco;
+      atualizarPreviewLogo();
+    }
+  } catch(err){
+    console.error(err);
+    showToast('Erro ao carregar dados do servidor.');
+  }
+  renderAll();
+}
+
 function renderAll(){
   renderDashboard();
   renderClientes();
@@ -489,7 +644,9 @@ function renderAll(){
   renderPecas();
   renderAgendamentos();
   renderOS();
+  renderUsuarios();
   preencherSelectsOrcamento();
+  renderOrcamentosSalvos();
 }
 
 function statusBadge(status, map){
@@ -532,7 +689,7 @@ function renderClientes(){
   const body = document.getElementById('clientesBody');
   body.innerHTML = db.clientes.length ? db.clientes.map(c=>`
     <tr><td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.telefone||'-')}</td><td>${escapeHtml(c.email||'-')}</td><td>${escapeHtml(c.documento||'-')}</td>
-    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('cliente','${c.id}')">Editar</button><button class="btn btn-del" onclick="excluir('clientes','${c.id}')">Excluir</button></td></tr>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('cliente','${c.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('clientes','${c.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum cliente cadastrado.</td></tr>`;
 }
 
@@ -540,7 +697,7 @@ function renderVeiculos(){
   const body = document.getElementById('veiculosBody');
   body.innerHTML = db.veiculos.length ? db.veiculos.map(v=>`
     <tr><td>${escapeHtml((v.placa||'').toUpperCase())}</td><td>${escapeHtml(v.marca||'')} ${escapeHtml(v.modelo||'')}</td><td>${escapeHtml(v.ano||'-')}</td><td>${escapeHtml(clienteNome(v.cliente_id))}</td>
-    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('veiculo','${v.id}')">Editar</button><button class="btn btn-del" onclick="excluir('veiculos','${v.id}')">Excluir</button></td></tr>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('veiculo','${v.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('veiculos','${v.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum veículo cadastrado.</td></tr>`;
 }
 
@@ -548,7 +705,7 @@ function renderMecanicos(){
   const body = document.getElementById('mecanicosBody');
   body.innerHTML = db.mecanicos.length ? db.mecanicos.map(m=>`
     <tr><td>${escapeHtml(m.nome)}</td><td>${escapeHtml(m.especialidade||'-')}</td><td>${escapeHtml(m.telefone||'-')}</td><td>${statusBadge(m.status||'disponivel', mecStatusMap)}</td>
-    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('mecanico','${m.id}')">Editar</button><button class="btn btn-del" onclick="excluir('mecanicos','${m.id}')">Excluir</button></td></tr>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('mecanico','${m.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('mecanicos','${m.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum mecânico cadastrado.</td></tr>`;
 }
 
@@ -556,7 +713,7 @@ function renderPecas(){
   const body = document.getElementById('pecasBody');
   body.innerHTML = db.pecas.length ? db.pecas.map(p=>`
     <tr><td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.categoria||'peca')}</td><td>${formatCurrency(p.custo)}</td><td>${formatCurrency(p.preco_venda)}</td><td>${escapeHtml(p.estoque??0)}</td>
-    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('peca','${p.id}')">Editar</button><button class="btn btn-del" onclick="excluir('pecas','${p.id}')">Excluir</button></td></tr>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('peca','${p.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('pecas','${p.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="6">Nenhuma peça cadastrada.</td></tr>`;
 }
 
@@ -566,7 +723,7 @@ function renderAgendamentos(){
   body.innerHTML = lista.length ? lista.map(a=>`
     <tr><td>${formatDate(a.data)}</td><td>${escapeHtml(a.horario||'-')}</td><td>${escapeHtml(clienteNome(a.cliente_id))}</td><td>${escapeHtml(veiculoLabel(a.veiculo_id))}</td><td>${escapeHtml(mecanicoNome(a.mecanico_id))}</td>
     <td>${statusBadge(a.status||'agendado', agStatusMap)}</td>
-    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('agendamento','${a.id}')">Editar</button><button class="btn btn-del" onclick="excluir('agendamentos','${a.id}')">Excluir</button></td></tr>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('agendamento','${a.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('agendamentos','${a.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="7">Nenhum agendamento cadastrado.</td></tr>`;
 }
 
@@ -575,16 +732,96 @@ function renderOS(){
   body.innerHTML = db.os.length ? db.os.map(o=>`
     <tr><td>${escapeHtml(o.numero||'-')}</td><td>${escapeHtml(clienteNome(o.cliente_id))}</td><td>${escapeHtml(veiculoLabel(o.veiculo_id))}</td><td>${escapeHtml(mecanicoNome(o.mecanico_id))}</td>
     <td>${statusBadge(o.status||'aberta', osStatusMap)}</td><td>${formatCurrency(o.valor_total)}</td>
-    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('os','${o.id}')">Editar</button><button class="btn btn-del" onclick="excluir('os','${o.id}')">Excluir</button></td></tr>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="7">Nenhuma OS cadastrada.</td></tr>`;
 }
 
+function renderUsuarios(){
+  const body = document.getElementById('usuariosBody');
+  if(!body) return;
+  const papelLabel = { admin:'Administrador', user:'Usuário' };
+  body.innerHTML = db.usuarios.length ? db.usuarios.map(u=>`
+    <tr><td>${escapeHtml(u.nome||'-')}</td><td>${escapeHtml(u.email||'-')}</td><td>${escapeHtml(papelLabel[u.papel]||u.papel)}</td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="3">Nenhum usuário encontrado.</td></tr>`;
+}
+
+/* ---------------- CRIAR NOVO USUÁRIO (admin) ---------------- */
+function gerarSenhaTemporaria(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let s = '';
+  for(let i=0;i<10;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+function abrirModalUsuario(){
+  const senhaSugerida = gerarSenhaTemporaria();
+  const box = document.getElementById('modalBox');
+  box.innerHTML = `
+    <h3>Novo usuário</h3>
+    <label>Nome *</label><input id="fu_nome">
+    <label>E-mail *</label><input id="fu_email" type="email">
+    <label>Senha temporária *</label><input id="fu_senha" value="${senhaSugerida}">
+    <label>Papel</label>
+    <select id="fu_papel">
+      <option value="user" selected>Usuário</option>
+      <option value="admin">Administrador</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-add" onclick="criarUsuario()">Criar usuário</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+async function criarUsuario(){
+  const nome = document.getElementById('fu_nome').value.trim();
+  const email = document.getElementById('fu_email').value.trim();
+  const senha = document.getElementById('fu_senha').value;
+  const papel = document.getElementById('fu_papel').value;
+
+  if(!nome || !email){ alert('Preencha nome e e-mail.'); return; }
+  if(senha.length < 6){ alert('A senha precisa ter pelo menos 6 caracteres.'); return; }
+
+  const btn = document.querySelector('.modal-actions .btn-add');
+  btn.disabled = true; btn.textContent = 'Criando...';
+
+  try{
+    // Client separado, sem salvar sessão: cria o novo usuário sem deslogar o admin atual.
+    const sbTemp = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data, error } = await sbTemp.auth.signUp({
+      email, password: senha,
+      options: { data: { nome, papel } }
+    });
+    if(error) throw error;
+
+    fecharModal();
+
+    if(data.session){
+      await carregarTudo();
+      alert(`Usuário criado!\n\nE-mail: ${email}\nSenha temporária: ${senha}\n\nEnvie esses dados para a pessoa. Ela já pode entrar direto pelo link do sistema.`);
+    } else {
+      alert(`Conta criada, mas o Supabase exige confirmação por e-mail.\n\nE-mail: ${email}\nSenha temporária: ${senha}\n\nPeça para a pessoa checar a caixa de entrada (e spam) e confirmar antes do primeiro acesso.`);
+      await carregarTudo();
+    }
+  } catch(err){
+    console.error(err);
+    alert('Não foi possível criar o usuário: ' + err.message);
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = 'Criar usuário'; }
+  }
+}
+
 /* ---------------- EXCLUIR ---------------- */
-const tabelaMap = { clientes:'clientes', veiculos:'veiculos', mecanicos:'mecanicos', pecas:'pecas', agendamentos:'agendamentos', os:'os' };
-function excluir(tabela, id){
+async function excluir(tabela, id){
   if(!confirm('Confirma excluir este registro?')) return;
+  const { error } = await sb.from(TABELAS[tabela]).delete().eq('id', id);
+  if(error){
+    console.error(error);
+    alert('Não foi possível excluir: ' + error.message);
+    return;
+  }
   db[tabela] = db[tabela].filter(r=>r.id!==id);
-  saveDb();
   renderAll();
   showToast('Registro excluído.');
 }
@@ -602,10 +839,12 @@ function opcoesMecanicos(selectedId){
   return db.mecanicos.map(m=>`<option value="${m.id}" ${m.id===selectedId?'selected':''}>${escapeHtml(m.nome)}</option>`).join('') || '<option value="">Nenhum mecânico cadastrado</option>';
 }
 
+const TIPO_PARA_DB = { cliente:'clientes', veiculo:'veiculos', mecanico:'mecanicos', peca:'pecas', agendamento:'agendamentos', os:'os' };
+
 function abrirModal(tipo, id){
   editing = { tipo, id: id||null };
   const box = document.getElementById('modalBox');
-  const registro = id ? db[tabelaMap[tipo] || (tipo+'s')].find(r=>r.id===id) : null;
+  const registro = id ? db[TIPO_PARA_DB[tipo]].find(r=>r.id===id) : null;
 
   const forms = {
     cliente: () => `
@@ -656,8 +895,8 @@ function abrirModal(tipo, id){
         <div><label>Fornecedor</label><input id="f_fornecedor" value="${escapeHtml(registro?.fornecedor||'')}"></div>
       </div>
       <div class="grid2">
-        <div><label>Custo *</label><input id="f_custo" type="number" step="0.01" value="${escapeHtml(registro?.custo??0)}"></div>
-        <div><label>Preço de venda *</label><input id="f_preco_venda" type="number" step="0.01" value="${escapeHtml(registro?.preco_venda??0)}"></div>
+        <div><label>Custo *</label><input id="f_custo" type="text" inputmode="decimal" placeholder="0,00" value="${escapeHtml(registro?.custo??0)}"></div>
+        <div><label>Preço de venda *</label><input id="f_preco_venda" type="text" inputmode="decimal" placeholder="0,00" value="${escapeHtml(registro?.preco_venda??0)}"></div>
       </div>
       <div class="grid2">
         <div><label>Estoque</label><input id="f_estoque" type="number" value="${escapeHtml(registro?.estoque??0)}"></div>
@@ -689,8 +928,8 @@ function abrirModal(tipo, id){
       <label>Descrição do problema</label><textarea id="f_descricao_problema">${escapeHtml(registro?.descricao_problema||'')}</textarea>
       <label>Diagnóstico</label><textarea id="f_diagnostico">${escapeHtml(registro?.diagnostico||'')}</textarea>
       <div class="grid2">
-        <div><label>Valor peças</label><input id="f_valor_pecas" type="number" step="0.01" value="${escapeHtml(registro?.valor_pecas??0)}"></div>
-        <div><label>Valor mão de obra</label><input id="f_valor_mao_obra" type="number" step="0.01" value="${escapeHtml(registro?.valor_mao_obra??0)}"></div>
+        <div><label>Valor peças</label><input id="f_valor_pecas" type="text" inputmode="decimal" placeholder="0,00" value="${escapeHtml(registro?.valor_pecas??0)}"></div>
+        <div><label>Valor mão de obra</label><input id="f_valor_mao_obra" type="text" inputmode="decimal" placeholder="0,00" value="${escapeHtml(registro?.valor_mao_obra??0)}"></div>
       </div>
       <label>Status</label>
       <select id="f_status">
@@ -710,9 +949,9 @@ function abrirModal(tipo, id){
 
 function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
 
-function salvarModal(){
+async function salvarModal(){
   const { tipo, id } = editing;
-  const tabela = { cliente:'clientes', veiculo:'veiculos', mecanico:'mecanicos', peca:'pecas', agendamento:'agendamentos', os:'os' }[tipo];
+  const tabelaSupabase = TABELAS[TIPO_PARA_DB[tipo]];
 
   let obj;
   if(tipo==='cliente'){
@@ -720,37 +959,47 @@ function salvarModal(){
     obj = { nome:val('f_nome'), telefone:val('f_telefone'), email:val('f_email'), documento:val('f_documento'), endereco:val('f_endereco') };
   } else if(tipo==='veiculo'){
     if(!val('f_placa').trim()){ alert('Placa é obrigatória.'); return; }
-    obj = { cliente_id:val('f_cliente_id')||null, placa:val('f_placa').toUpperCase(), marca:val('f_marca'), modelo:val('f_modelo'), ano:val('f_ano'), cor:val('f_cor'), quilometragem:parseFloat(val('f_km'))||0 };
+    obj = { cliente_id:val('f_cliente_id')||null, placa:val('f_placa').toUpperCase(), marca:val('f_marca'), modelo:val('f_modelo'), ano:parseInt(val('f_ano'))||null, cor:val('f_cor'), quilometragem:parseFloat(val('f_km'))||0 };
   } else if(tipo==='mecanico'){
     if(!val('f_nome').trim()){ alert('Nome é obrigatório.'); return; }
     obj = { nome:val('f_nome'), especialidade:val('f_especialidade'), telefone:val('f_telefone'), status:val('f_status') };
   } else if(tipo==='peca'){
     if(!val('f_nome').trim()){ alert('Nome é obrigatório.'); return; }
-    obj = { nome:val('f_nome'), categoria:val('f_categoria'), fornecedor:val('f_fornecedor'), custo:parseFloat(val('f_custo'))||0, preco_venda:parseFloat(val('f_preco_venda'))||0, estoque:parseInt(val('f_estoque'))||0, estoque_minimo:parseInt(val('f_estoque_minimo'))||5 };
+    obj = { nome:val('f_nome'), categoria:val('f_categoria'), fornecedor:val('f_fornecedor'), custo:parseNumeroBR(val('f_custo')), preco_venda:parseNumeroBR(val('f_preco_venda')), estoque:parseInt(val('f_estoque'))||0, estoque_minimo:parseInt(val('f_estoque_minimo'))||5 };
   } else if(tipo==='agendamento'){
     if(!val('f_cliente_id') || !val('f_veiculo_id') || !val('f_mecanico_id') || !val('f_data') || !val('f_horario')){ alert('Preencha cliente, veículo, mecânico, data e horário.'); return; }
     obj = { cliente_id:val('f_cliente_id'), veiculo_id:val('f_veiculo_id'), mecanico_id:val('f_mecanico_id'), data:val('f_data'), horario:val('f_horario'), tipo_servico:val('f_tipo_servico'), descricao:val('f_descricao'), status:val('f_status') };
   } else if(tipo==='os'){
     if(!val('f_cliente_id') || !val('f_veiculo_id')){ alert('Selecione cliente e veículo.'); return; }
-    const valor_pecas = parseFloat(val('f_valor_pecas'))||0;
-    const valor_mao_obra = parseFloat(val('f_valor_mao_obra'))||0;
+    const valor_pecas = parseNumeroBR(val('f_valor_pecas'));
+    const valor_mao_obra = parseNumeroBR(val('f_valor_mao_obra'));
+    // valor_total é coluna calculada automaticamente no banco (não enviar).
     obj = { numero:val('f_numero'), cliente_id:val('f_cliente_id'), veiculo_id:val('f_veiculo_id'), mecanico_id:val('f_mecanico_id')||null,
       descricao_problema:val('f_descricao_problema'), diagnostico:val('f_diagnostico'),
-      valor_pecas, valor_mao_obra, valor_total: valor_pecas+valor_mao_obra,
-      status:val('f_status'), data_entrada: id ? (db.os.find(o=>o.id===id)?.data_entrada || new Date().toISOString()) : new Date().toISOString() };
+      valor_pecas, valor_mao_obra, status:val('f_status') };
   }
 
-  if(id){
-    const idx = db[tabela].findIndex(r=>r.id===id);
-    db[tabela][idx] = { ...db[tabela][idx], ...obj };
-  } else {
-    obj.id = uid();
-    db[tabela].push(obj);
+  const btnSalvar = document.querySelector('.modal-actions .btn-add');
+  if(btnSalvar){ btnSalvar.disabled = true; btnSalvar.textContent = 'Salvando...'; }
+
+  try{
+    if(id){
+      const { error } = await sb.from(tabelaSupabase).update(obj).eq('id', id);
+      if(error) throw error;
+    } else {
+      obj.empresa_id = meuPerfil.empresa_id;
+      const { error } = await sb.from(tabelaSupabase).insert(obj);
+      if(error) throw error;
+    }
+    fecharModal();
+    await carregarTudo();
+    showToast('Salvo com sucesso.');
+  } catch(err){
+    console.error(err);
+    alert('Não foi possível salvar: ' + err.message);
+  } finally {
+    if(btnSalvar){ btnSalvar.disabled = false; btnSalvar.textContent = 'Salvar'; }
   }
-  saveDb();
-  fecharModal();
-  renderAll();
-  showToast('Salvo com sucesso.');
 }
 
 /* ==========================================================
@@ -766,9 +1015,9 @@ function addPecaOrc(nome='', qtd=1, preco=0){
   div.innerHTML = `
     <div><input placeholder="Nome da peça" class="orcPecaNome" value="${escapeHtml(nome)}" oninput="calcularTotaisOrc()"></div>
     <div><input type="number" placeholder="Qtd" class="orcPecaQtd" value="${escapeHtml(qtd)}" oninput="calcularTotaisOrc()"></div>
-    <div><input type="number" placeholder="Preço unit." class="orcPecaPreco" value="${escapeHtml(preco)}" oninput="calcularTotaisOrc()"></div>
+    <div><input type="text" inputmode="decimal" placeholder="Preço unit." class="orcPecaPreco" value="${escapeHtml(preco)}" oninput="calcularTotaisOrc()"></div>
     <div style="font-size:.8rem;color:#999;align-self:center" class="orcPecaSub">R$ 0,00</div>
-    <button class="btn btn-del" onclick="document.getElementById('orcPeca-${pecaOrcId}').remove();calcularTotaisOrc()">×</button>
+    <button class="btn btn-del" onclick="document.getElementById('orcPeca-${pecaOrcId}').remove();calcularTotaisOrc()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   `;
   document.getElementById('orcPecasList').appendChild(div);
   calcularTotaisOrc();
@@ -781,8 +1030,8 @@ function addServicoOrc(nome='', valor=0){
   div.id = 'orcServico-'+servicoOrcId;
   div.innerHTML = `
     <div><input placeholder="Descrição do serviço" class="orcServNome" value="${escapeHtml(nome)}" oninput="calcularTotaisOrc()"></div>
-    <div><input type="number" placeholder="Valor" class="orcServValor" value="${escapeHtml(valor)}" oninput="calcularTotaisOrc()"></div>
-    <button class="btn btn-del" onclick="document.getElementById('orcServico-${servicoOrcId}').remove();calcularTotaisOrc()">×</button>
+    <div><input type="text" inputmode="decimal" placeholder="Valor" class="orcServValor" value="${escapeHtml(valor)}" oninput="calcularTotaisOrc()"></div>
+    <button class="btn btn-del" onclick="document.getElementById('orcServico-${servicoOrcId}').remove();calcularTotaisOrc()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   `;
   document.getElementById('orcServicosList').appendChild(div);
   calcularTotaisOrc();
@@ -792,14 +1041,14 @@ function calcularTotaisOrc(){
   let totPecas = 0;
   document.querySelectorAll('#orcPecasList .item-row').forEach(row=>{
     const qtd = parseFloat(row.querySelector('.orcPecaQtd').value)||0;
-    const preco = parseFloat(row.querySelector('.orcPecaPreco').value)||0;
+    const preco = parseNumeroBR(row.querySelector('.orcPecaPreco').value);
     const sub = qtd*preco;
     row.querySelector('.orcPecaSub').textContent = formatCurrency(sub);
     totPecas += sub;
   });
   let totServicos = 0;
   document.querySelectorAll('#orcServicosList .item-row').forEach(row=>{
-    totServicos += parseFloat(row.querySelector('.orcServValor').value)||0;
+    totServicos += parseNumeroBR(row.querySelector('.orcServValor').value);
   });
   document.getElementById('orcTotPecas').textContent = formatCurrency(totPecas);
   document.getElementById('orcTotServicos').textContent = formatCurrency(totServicos);
@@ -880,7 +1129,207 @@ function preencherDaOS(){
   }
 }
 
-function gerarOrcamento(){
+/* ---------------- LOGO DA EMPRESA ---------------- */
+function atualizarPreviewLogo(){
+  const img = document.getElementById('orcLogoPreview');
+  const btnRemover = document.getElementById('orcLogoRemover');
+  if(logoAtualBase64){
+    img.src = logoAtualBase64;
+    img.style.display = 'inline-block';
+    btnRemover.style.display = 'inline-block';
+  } else {
+    img.style.display = 'none';
+    btnRemover.style.display = 'none';
+  }
+}
+
+function handleLogoUpload(ev){
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+  if(file.size > 1.5*1024*1024){ alert('Escolha uma imagem menor que 1,5MB.'); ev.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    logoAtualBase64 = reader.result;
+    atualizarPreviewLogo();
+    try{
+      const { error } = await sb.from('empresa_config').upsert({
+        empresa_id: meuPerfil.empresa_id,
+        logo_base64: logoAtualBase64,
+        telefone: document.getElementById('orcEmpTel').value,
+        endereco: document.getElementById('orcEmpEnd').value,
+        atualizado_em: new Date().toISOString()
+      }, { onConflict: 'empresa_id' });
+      if(error) throw error;
+      showToast('Logo salva.');
+    } catch(err){
+      console.error(err);
+      alert('Não foi possível salvar a logo: ' + err.message);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function removerLogo(){
+  logoAtualBase64 = null;
+  atualizarPreviewLogo();
+  document.getElementById('orcLogoInput').value = '';
+  try{
+    await sb.from('empresa_config').upsert({ empresa_id: meuPerfil.empresa_id, logo_base64: null, atualizado_em: new Date().toISOString() }, { onConflict: 'empresa_id' });
+  } catch(err){ console.error(err); }
+}
+
+/* ---------------- RASCUNHOS / HISTÓRICO DE ORÇAMENTOS ---------------- */
+function coletarDadosFormularioOrcamento(){
+  return {
+    empresa: {
+      nome: document.getElementById('orcEmpNome').value,
+      tel: document.getElementById('orcEmpTel').value,
+      end: document.getElementById('orcEmpEnd').value,
+    },
+    osNumero: document.getElementById('orcOsNumero').value,
+    osData: document.getElementById('orcOsData').value,
+    osValidade: document.getElementById('orcOsValidade').value,
+    cliNome: document.getElementById('orcCliNome').value,
+    cliTel: document.getElementById('orcCliTel').value,
+    veiPlaca: document.getElementById('orcVeiPlaca').value,
+    veiAno: document.getElementById('orcVeiAno').value,
+    veiMarca: document.getElementById('orcVeiMarca').value,
+    veiModelo: document.getElementById('orcVeiModelo').value,
+    veiCor: document.getElementById('orcVeiCor').value,
+    veiKm: document.getElementById('orcVeiKm').value,
+    mecNome: document.getElementById('orcMecNome').value,
+    descProblema: document.getElementById('orcDescProblema').value,
+    diagnostico: document.getElementById('orcDiagnostico').value,
+    obs: document.getElementById('orcObs').value,
+    pecas: Array.from(document.querySelectorAll('#orcPecasList .item-row')).map(row=>({
+      nome: row.querySelector('.orcPecaNome').value,
+      qtd: row.querySelector('.orcPecaQtd').value,
+      preco: row.querySelector('.orcPecaPreco').value,
+    })),
+    servicos: Array.from(document.querySelectorAll('#orcServicosList .item-row')).map(row=>({
+      nome: row.querySelector('.orcServNome').value,
+      valor: row.querySelector('.orcServValor').value,
+    })),
+  };
+}
+
+function preencherFormularioOrcamento(dados){
+  if(!dados) return;
+  document.getElementById('orcEmpNome').value = dados.empresa?.nome || 'Marcon Auto Center';
+  document.getElementById('orcEmpTel').value = dados.empresa?.tel || '';
+  document.getElementById('orcEmpEnd').value = dados.empresa?.end || '';
+  document.getElementById('orcOsNumero').value = dados.osNumero || '';
+  document.getElementById('orcOsData').value = dados.osData || '';
+  document.getElementById('orcOsValidade').value = dados.osValidade || 7;
+  document.getElementById('orcCliNome').value = dados.cliNome || '';
+  document.getElementById('orcCliTel').value = dados.cliTel || '';
+  document.getElementById('orcVeiPlaca').value = dados.veiPlaca || '';
+  document.getElementById('orcVeiAno').value = dados.veiAno || '';
+  document.getElementById('orcVeiMarca').value = dados.veiMarca || '';
+  document.getElementById('orcVeiModelo').value = dados.veiModelo || '';
+  document.getElementById('orcVeiCor').value = dados.veiCor || '';
+  document.getElementById('orcVeiKm').value = dados.veiKm || '';
+  document.getElementById('orcMecNome').value = dados.mecNome || '';
+  document.getElementById('orcDescProblema').value = dados.descProblema || '';
+  document.getElementById('orcDiagnostico').value = dados.diagnostico || '';
+  document.getElementById('orcObs').value = dados.obs || '';
+
+  document.querySelectorAll('#orcPecasList .item-row').forEach(r=>r.remove());
+  document.querySelectorAll('#orcServicosList .item-row').forEach(r=>r.remove());
+  (dados.pecas && dados.pecas.length ? dados.pecas : [{nome:'',qtd:1,preco:0}]).forEach(p=>addPecaOrc(p.nome, p.qtd, p.preco));
+  (dados.servicos && dados.servicos.length ? dados.servicos : [{nome:'',valor:0}]).forEach(s=>addServicoOrc(s.nome, s.valor));
+
+  voltarEdicaoOrc();
+}
+
+async function salvarOrcamentoNoBanco(status){
+  const dados = coletarDadosFormularioOrcamento();
+  const { totPecas, totServicos } = calcularTotaisOrc();
+  const payload = {
+    empresa_id: meuPerfil.empresa_id,
+    numero_os: dados.osNumero || null,
+    dados,
+    valor_total: totPecas + totServicos,
+    status,
+    atualizado_em: new Date().toISOString(),
+  };
+  if(rascunhoAtualId){
+    const { error } = await sb.from('orcamentos').update(payload).eq('id', rascunhoAtualId);
+    if(error) throw error;
+  } else {
+    const { data, error } = await sb.from('orcamentos').insert(payload).select('id').single();
+    if(error) throw error;
+    rascunhoAtualId = data.id;
+  }
+}
+
+let rascunhoAtualId = null;
+
+async function salvarRascunho(){
+  const cliNome = document.getElementById('orcCliNome').value.trim();
+  if(!cliNome){ alert('Informe ao menos o nome do cliente antes de salvar.'); return; }
+  try{
+    await salvarOrcamentoNoBanco('rascunho');
+    await carregarTudo();
+    showToast('Rascunho salvo.');
+  } catch(err){
+    console.error(err);
+    alert('Não foi possível salvar o rascunho: ' + err.message);
+  }
+}
+
+function renderOrcamentosSalvos(){
+  const card = document.getElementById('orcamentosSalvosCard');
+  const body = document.getElementById('orcamentosSalvosBody');
+  if(!card || !body) return;
+  if(!db.orcamentos || !db.orcamentos.length){ card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const statusLabel = { rascunho:'Rascunho', gerado:'Gerado' };
+  body.innerHTML = db.orcamentos.map(o=>{
+    const d = o.dados || {};
+    const data = o.criado_em ? new Date(o.criado_em).toLocaleDateString('pt-BR') : '-';
+    return `<tr>
+      <td>${data}</td>
+      <td>${escapeHtml(d.cliNome || '-')}</td>
+      <td>${escapeHtml(statusLabel[o.status]||o.status)}</td>
+      <td>${formatCurrency(o.valor_total)}</td>
+      <td class="actions-cell">
+        <button class="btn btn-edit" onclick="carregarOrcamentoSalvo('${o.id}')">Carregar</button>
+        <button class="btn btn-del" onclick="excluirOrcamentoSalvo('${o.id}')">Excluir</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function carregarOrcamentoSalvo(id){
+  const registro = db.orcamentos.find(o=>o.id===id);
+  if(!registro) return;
+  rascunhoAtualId = registro.id;
+  preencherFormularioOrcamento(registro.dados);
+  showToast('Orçamento carregado — edite e gere/baixe normalmente.');
+}
+
+function novoOrcamento(){
+  rascunhoAtualId = null;
+  preencherFormularioOrcamento({});
+  showToast('Formulário limpo para um novo orçamento.');
+}
+
+async function excluirOrcamentoSalvo(id){
+  if(!confirm('Excluir este orçamento salvo?')) return;
+  try{
+    const { error } = await sb.from('orcamentos').delete().eq('id', id);
+    if(error) throw error;
+    if(rascunhoAtualId === id) rascunhoAtualId = null;
+    await carregarTudo();
+    showToast('Orçamento excluído.');
+  } catch(err){
+    console.error(err);
+    alert('Não foi possível excluir: ' + err.message);
+  }
+}
+
+async function gerarOrcamento(){
   const cliNome = document.getElementById('orcCliNome').value.trim();
   if(!cliNome){
     alert('Informe o nome do cliente antes de gerar o orçamento.');
@@ -895,6 +1344,10 @@ function gerarOrcamento(){
   const tel = document.getElementById('orcEmpTel').value;
   const end = document.getElementById('orcEmpEnd').value;
   document.getElementById('orcPEmpContato').textContent = [tel, end].filter(Boolean).join(' · ');
+
+  const logoImg = document.getElementById('orcPLogo');
+  if(logoAtualBase64){ logoImg.src = logoAtualBase64; logoImg.style.display = 'inline-block'; }
+  else { logoImg.style.display = 'none'; }
 
   document.getElementById('orcPOsNumero').textContent = document.getElementById('orcOsNumero').value ? ('OS #'+document.getElementById('orcOsNumero').value) : '';
   const dataVal = document.getElementById('orcOsData').value;
@@ -923,7 +1376,7 @@ function gerarOrcamento(){
   document.querySelectorAll('#orcPecasList .item-row').forEach(row=>{
     const nome = row.querySelector('.orcPecaNome').value;
     const qtd = parseFloat(row.querySelector('.orcPecaQtd').value)||0;
-    const preco = parseFloat(row.querySelector('.orcPecaPreco').value)||0;
+    const preco = parseNumeroBR(row.querySelector('.orcPecaPreco').value);
     if(!nome) return;
     hasPecas = true;
     pecasBody.innerHTML += `<tr><td>${escapeHtml(nome)}</td><td class="num">${qtd}</td><td class="num">${formatCurrency(preco)}</td><td class="num">${formatCurrency(qtd*preco)}</td></tr>`;
@@ -935,7 +1388,7 @@ function gerarOrcamento(){
   let hasServicos = false;
   document.querySelectorAll('#orcServicosList .item-row').forEach(row=>{
     const nome = row.querySelector('.orcServNome').value;
-    const valor = parseFloat(row.querySelector('.orcServValor').value)||0;
+    const valor = parseNumeroBR(row.querySelector('.orcServValor').value);
     if(!nome) return;
     hasServicos = true;
     servBody.innerHTML += `<tr><td>${escapeHtml(nome)}</td><td class="num">${formatCurrency(valor)}</td></tr>`;
@@ -957,6 +1410,14 @@ function gerarOrcamento(){
   document.getElementById('orcamentoPreview').classList.add('show');
   document.getElementById('orcPostGerarBtns').style.display = 'block';
   document.getElementById('view-orcamento').scrollIntoView({behavior:'smooth', block:'start'});
+
+  try{
+    await salvarOrcamentoNoBanco('gerado');
+    await carregarTudo();
+  } catch(err){
+    console.error('Erro ao salvar histórico do orçamento:', err);
+    // Não bloqueia o fluxo: o PDF/WhatsApp já pode ser usado mesmo se o histórico falhar ao salvar.
+  }
 }
 
 function voltarEdicaoOrc(){
