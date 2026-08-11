@@ -109,6 +109,18 @@
   .badge-green { background:rgba(34,197,94,.15); color:#4ade80; border-color:rgba(34,197,94,.3); }
   .badge-red { background:rgba(239,68,68,.15); color:#f87171; border-color:rgba(239,68,68,.3); }
 
+  /* CARDS DE OS (lado a lado) */
+  .os-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }
+  .os-card { background:#151515; border:1px solid hsl(45 20% 16%); border-radius:10px; padding:14px 16px; box-shadow:0 1px 3px rgba(0,0,0,.25); display:flex; flex-direction:column; gap:8px; transition:border-color .12s ease; }
+  .os-card:hover { border-color:hsl(45 30% 30%); }
+  .os-card .os-card-top { display:flex; justify-content:space-between; align-items:center; }
+  .os-card .os-card-numero { font-weight:700; color:hsl(45 68% 65%); font-size:.9rem; }
+  .os-card .os-card-row { font-size:.8rem; color:#c8c0ac; display:flex; gap:6px; }
+  .os-card .os-card-row b { color:#8a8270; font-weight:600; min-width:60px; flex-shrink:0; }
+  .os-card .os-card-valor { font-size:1.1rem; font-weight:700; color:hsl(45 68% 62%); margin-top:2px; }
+  .os-card .os-card-actions { display:flex; gap:6px; margin-top:6px; padding-top:10px; border-top:1px solid hsl(45 20% 14%); }
+  .os-card .os-card-actions .btn { flex:1; justify-content:center; display:flex; align-items:center; }
+
   /* MODAL */
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:100; padding:16px; }
   .modal-overlay.show { display:flex; }
@@ -165,13 +177,34 @@
 
   @media print {
     @page { margin: 15mm; }
-    body { background:#fff; padding:0; margin:0; }
+    body { background:#fff; padding:0; margin:0; color:#000; }
     .no-print, .topbar, .sidebar, .sidebar-overlay, .modal-overlay { display:none !important; }
     .print-doc.show { display:block !important; }
     .app-body { display:block !important; }
     .main-content { width:100% !important; }
     .print-doc { border-radius:0; padding:12mm !important; margin:0 auto; }
     .view { max-width:100% !important; padding:0 !important; margin:0 !important; }
+
+    /* Impressão direta de qualquer tela de listagem (sem usar o botão "Imprimir" de um documento específico):
+       esconde botões/ações (não fazem sentido no papel) e deixa tabelas/cards limpos em fundo branco. */
+    .view:not(.print-doc) button, .view:not(.print-doc) .actions-cell, .os-card-actions, .btn-menu-toggle { display:none !important; }
+    .section-header { border-bottom:1px solid #ccc !important; }
+    .section-header h2 { color:#000 !important; }
+    .section-header h2::before { background:#8a6d1a !important; }
+
+    table { background:#fff !important; border:1px solid #ccc !important; box-shadow:none !important; }
+    thead th { background:#f0f0f0 !important; color:#333 !important; border-bottom:1px solid #ccc !important; }
+    tbody td { color:#000 !important; border-top:1px solid #eee !important; }
+    tbody tr:hover { background:#fff !important; }
+
+    .os-grid { display:block !important; }
+    .os-card { background:#fff !important; border:1px solid #ccc !important; box-shadow:none !important; color:#000 !important; break-inside:avoid; margin-bottom:10px; padding:10px 14px !important; }
+    .os-card .os-card-numero { color:#8a6d1a !important; }
+    .os-card .os-card-row { color:#333 !important; }
+    .os-card .os-card-row b { color:#666 !important; }
+    .os-card .os-card-valor { color:#8a6d1a !important; }
+
+    .badge { border:1px solid #999 !important; background:#f2f2f2 !important; color:#000 !important; }
   }
 
   /* ÍCONES */
@@ -309,8 +342,7 @@
   <!-- ORDENS DE SERVICO -->
   <div class="view" id="view-os">
     <div class="section-header"><h2>Ordens de Serviço</h2><button class="btn btn-add" onclick="abrirModal('os')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova OS</button></div>
-    <table><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Mecânico</th><th>Status</th><th>Valor</th><th></th></tr></thead>
-    <tbody id="osBody"></tbody></table>
+    <div class="os-grid" id="osBody"></div>
   </div>
 
   <!-- ORÇAMENTO (integrado, funcional) -->
@@ -1227,14 +1259,22 @@ function enviarConfirmacaoAgendamento(id){
 function renderOS(){
   const body = document.getElementById('osBody');
   body.innerHTML = db.os.length ? db.os.map(o=>`
-    <tr><td>${escapeHtml(o.numero||'-')}</td><td>${escapeHtml(clienteNome(o.cliente_id))}</td><td>${escapeHtml(veiculoLabel(o.veiculo_id))}</td><td>${escapeHtml(mecanicoNome(o.mecanico_id))}</td>
-    <td>${statusBadge(o.status||'aberta', osStatusMap)}</td><td>${formatCurrency(o.valor_total)}</td>
-    <td class="actions-cell">
-      <button class="btn btn-secondary" onclick="imprimirOS('${o.id}')" title="Imprimir"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-      <button class="btn btn-edit" onclick="abrirModal('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>
-      <button class="btn btn-del" onclick="excluir('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button>
-    </td></tr>
-  `).join('') : `<tr class="empty-row"><td colspan="7">Nenhuma OS cadastrada.</td></tr>`;
+    <div class="os-card">
+      <div class="os-card-top">
+        <span class="os-card-numero">${escapeHtml(o.numero||'OS sem número')}</span>
+        ${statusBadge(o.status||'aberta', osStatusMap)}
+      </div>
+      <div class="os-card-row"><b>Cliente</b> ${escapeHtml(clienteNome(o.cliente_id))}</div>
+      <div class="os-card-row"><b>Veículo</b> ${escapeHtml(veiculoLabel(o.veiculo_id))}</div>
+      <div class="os-card-row"><b>Mecânico</b> ${escapeHtml(mecanicoNome(o.mecanico_id))}</div>
+      <div class="os-card-valor">${formatCurrency(o.valor_total)}</div>
+      <div class="os-card-actions">
+        <button class="btn btn-secondary" onclick="imprimirOS('${o.id}')" title="Imprimir"><svg class="icon-sm" viewBox="0 0 24 24" style="margin-right:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+        <button class="btn btn-edit" onclick="abrirModal('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>
+        <button class="btn btn-del" onclick="excluir('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button>
+      </div>
+    </div>
+  `).join('') : `<div style="text-align:center;color:#666;padding:26px;font-size:.83rem;grid-column:1/-1">Nenhuma OS cadastrada.</div>`;
 }
 
 function renderUsuarios(){
