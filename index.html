@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Marcon Auto Center - Sistema</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -1447,20 +1448,36 @@ function nomeArquivoPDF(){
   return 'orcamento' + (osNum ? '-'+osNum.replace(/[^\w-]/g,'') : '') + (placa ? '-'+placa : '') + '.pdf';
 }
 
-function gerarPDFBlob(){
-  if(typeof html2pdf === 'undefined'){
-    return Promise.reject(new Error('Biblioteca html2pdf.js não carregou (verifique sua conexão com a internet).'));
+async function gerarPDFBlob(){
+  if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
+    throw new Error('Bibliotecas de PDF não carregaram (verifique sua conexão com a internet).');
   }
   const el = document.getElementById('orcamentoPreview');
-  const opt = {
-    margin:       [10, 10, 10, 10],
-    filename:     nomeArquivoPDF(),
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak:    { mode: ['css', 'legacy'] }
-  };
-  return html2pdf().set(opt).from(el).outputPdf('blob');
+
+  const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+  const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = 210, pageHeight = 297, margin = 10;
+  const usableWidth = pageWidth - margin * 2;
+  const usableHeight = pageHeight - margin * 2;
+  const imgHeight = (canvas.height * usableWidth) / canvas.width;
+
+  let heightLeft = imgHeight;
+  let position = margin;
+
+  pdf.addImage(imgData, 'JPEG', margin, position, usableWidth, imgHeight);
+  heightLeft -= usableHeight;
+
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight + margin;
+    pdf.addPage();
+    pdf.addImage(imgData, 'JPEG', margin, position, usableWidth, imgHeight);
+    heightLeft -= usableHeight;
+  }
+
+  return pdf.output('blob');
 }
 
 function comBotaoOcupado(btnId, textoOcupado, fn){
