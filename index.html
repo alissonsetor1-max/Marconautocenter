@@ -201,6 +201,7 @@
       <button class="tab-btn" data-view="veiculos"><svg class="icon" viewBox="0 0 24 24"><path d="M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM3 17V11l2-5h14l2 5v6M3 11h18"/></svg>Veículos</button>
       <button class="tab-btn" data-view="mecanicos"><svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Mecânicos</button>
       <button class="tab-btn" data-view="pecas"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Peças</button>
+      <button class="tab-btn" data-view="fipe"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Consultar FIPE</button>
       <button class="tab-btn" data-view="orcamento"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Gerar Orçamento</button>
       <button class="tab-btn" data-view="usuarios" id="navUsuarios" style="display:none"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Usuários</button>
     </div>
@@ -241,6 +242,32 @@
     <div class="section-header"><h2>Peças / Estoque</h2><button class="btn btn-add" onclick="abrirModal('peca')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova peça</button></div>
     <table><thead><tr><th>Nome</th><th>Categoria</th><th>Custo</th><th>Venda</th><th>Estoque</th><th></th></tr></thead>
     <tbody id="pecasBody"></tbody></table>
+  </div>
+
+  <!-- CONSULTAR FIPE (ferramenta independente) -->
+  <div class="view" id="view-fipe">
+    <div class="section-header"><h2>Consultar Tabela FIPE</h2></div>
+    <div class="orc-card" style="max-width:480px">
+      <label>Tipo de veículo</label>
+      <select id="fipeStTipo" onchange="fipeStCarregarMarcas()">
+        <option value="cars">Carro</option>
+        <option value="motorcycles">Moto</option>
+        <option value="trucks">Caminhão</option>
+      </select>
+      <label>Marca</label>
+      <select id="fipeStMarca" onchange="fipeStCarregarModelos()"><option value="">Carregando...</option></select>
+      <label>Modelo</label>
+      <select id="fipeStModelo" onchange="fipeStCarregarAnos()" disabled><option value="">Selecione a marca primeiro</option></select>
+      <label>Ano</label>
+      <select id="fipeStAno" onchange="fipeStBuscarValor()" disabled><option value="">Selecione o modelo primeiro</option></select>
+
+      <div id="fipeStResultado" style="display:none;margin-top:14px;padding:14px;background:hsl(45 25% 12%);border-radius:8px">
+        <div style="font-size:.8rem;color:#aaa" id="fipeStResumo"></div>
+        <div style="font-size:1.5rem;color:hsl(45 68% 65%);font-weight:700;margin-top:4px" id="fipeStValor"></div>
+      </div>
+      <div id="fipeStCarregando" style="display:none;font-size:.85rem;color:#999;margin-top:10px">Buscando...</div>
+      <div id="fipeStErro" style="display:none;font-size:.85rem;color:#e88;margin-top:10px"></div>
+    </div>
   </div>
 
   <!-- AGENDAMENTOS -->
@@ -610,6 +637,7 @@ function switchView(name){
   const btn = document.querySelector(`.tab-btn[data-view="${name}"]`);
   if(btn) btn.classList.add('active');
   fecharSidebarMobile();
+  if(name === 'fipe' && !fipeStMarcasCarregadas) fipeStCarregarMarcas();
 }
 
 function toggleSidebar(){
@@ -1078,6 +1106,99 @@ function fipePreencherFormulario(){
   const anoNum = parseInt(fipeResultadoAtual.modelYear);
   document.getElementById('f_ano').value = isNaN(anoNum) ? fipeResultadoAtual.modelYear : anoNum;
   showToast('Dados da FIPE preenchidos. Clique em Salvar para gravar o veículo.');
+}
+
+/* ---------------- CONSULTAR FIPE — página independente no menu ---------------- */
+let fipeStMarcasCarregadas = false;
+
+async function fipeStCarregarMarcas(){
+  const tipo = document.getElementById('fipeStTipo').value;
+  const selMarca = document.getElementById('fipeStMarca');
+  const selModelo = document.getElementById('fipeStModelo');
+  const selAno = document.getElementById('fipeStAno');
+  selMarca.innerHTML = '<option value="">Carregando...</option>';
+  selModelo.innerHTML = '<option value="">Selecione a marca primeiro</option>'; selModelo.disabled = true;
+  selAno.innerHTML = '<option value="">Selecione o modelo primeiro</option>'; selAno.disabled = true;
+  document.getElementById('fipeStResultado').style.display = 'none';
+  document.getElementById('fipeStErro').style.display = 'none';
+  try{
+    const marcas = await fipeFetch(`${FIPE_BASE}/${tipo}/brands`);
+    selMarca.innerHTML = '<option value="">Selecione a marca</option>' + marcas.map(m=>`<option value="${m.code}">${escapeHtml(m.name)}</option>`).join('');
+    fipeStMarcasCarregadas = true;
+  } catch(err){
+    console.error(err);
+    selMarca.innerHTML = '<option value="">Erro ao carregar</option>';
+    mostrarErroFipeSt('Não foi possível carregar as marcas. Verifique sua conexão e tente novamente.');
+  }
+}
+
+async function fipeStCarregarModelos(){
+  const tipo = document.getElementById('fipeStTipo').value;
+  const marca = document.getElementById('fipeStMarca').value;
+  const selModelo = document.getElementById('fipeStModelo');
+  const selAno = document.getElementById('fipeStAno');
+  document.getElementById('fipeStResultado').style.display = 'none';
+  document.getElementById('fipeStErro').style.display = 'none';
+  if(!marca){ selModelo.innerHTML = '<option value="">Selecione a marca primeiro</option>'; selModelo.disabled = true; return; }
+  selModelo.innerHTML = '<option value="">Carregando...</option>'; selModelo.disabled = true;
+  selAno.innerHTML = '<option value="">Selecione o modelo primeiro</option>'; selAno.disabled = true;
+  try{
+    const modelos = await fipeFetch(`${FIPE_BASE}/${tipo}/brands/${marca}/models`);
+    selModelo.innerHTML = '<option value="">Selecione o modelo</option>' + modelos.map(m=>`<option value="${m.code}">${escapeHtml(m.name)}</option>`).join('');
+    selModelo.disabled = false;
+  } catch(err){
+    console.error(err);
+    selModelo.innerHTML = '<option value="">Erro ao carregar</option>';
+    mostrarErroFipeSt('Não foi possível carregar os modelos. Tente novamente.');
+  }
+}
+
+async function fipeStCarregarAnos(){
+  const tipo = document.getElementById('fipeStTipo').value;
+  const marca = document.getElementById('fipeStMarca').value;
+  const modelo = document.getElementById('fipeStModelo').value;
+  const selAno = document.getElementById('fipeStAno');
+  document.getElementById('fipeStResultado').style.display = 'none';
+  document.getElementById('fipeStErro').style.display = 'none';
+  if(!modelo){ selAno.innerHTML = '<option value="">Selecione o modelo primeiro</option>'; selAno.disabled = true; return; }
+  selAno.innerHTML = '<option value="">Carregando...</option>'; selAno.disabled = true;
+  try{
+    const anos = await fipeFetch(`${FIPE_BASE}/${tipo}/brands/${marca}/models/${modelo}/years`);
+    selAno.innerHTML = '<option value="">Selecione o ano</option>' + anos.map(a=>`<option value="${a.code}">${escapeHtml(a.name)}</option>`).join('');
+    selAno.disabled = false;
+  } catch(err){
+    console.error(err);
+    selAno.innerHTML = '<option value="">Erro ao carregar</option>';
+    mostrarErroFipeSt('Não foi possível carregar os anos. Tente novamente.');
+  }
+}
+
+async function fipeStBuscarValor(){
+  const tipo = document.getElementById('fipeStTipo').value;
+  const marca = document.getElementById('fipeStMarca').value;
+  const modelo = document.getElementById('fipeStModelo').value;
+  const ano = document.getElementById('fipeStAno').value;
+  if(!ano) return;
+  document.getElementById('fipeStResultado').style.display = 'none';
+  document.getElementById('fipeStErro').style.display = 'none';
+  document.getElementById('fipeStCarregando').style.display = 'block';
+  try{
+    const dados = await fipeFetch(`${FIPE_BASE}/${tipo}/brands/${marca}/models/${modelo}/years/${ano}`);
+    document.getElementById('fipeStResumo').textContent = `${dados.brand} ${dados.model} — ${dados.modelYear} (código FIPE ${dados.codeFipe}, referência ${dados.referenceMonth})`;
+    document.getElementById('fipeStValor').textContent = dados.price;
+    document.getElementById('fipeStResultado').style.display = 'block';
+  } catch(err){
+    console.error(err);
+    mostrarErroFipeSt('Não foi possível buscar o valor. Tente novamente em instantes.');
+  } finally {
+    document.getElementById('fipeStCarregando').style.display = 'none';
+  }
+}
+
+function mostrarErroFipeSt(msg){
+  const el = document.getElementById('fipeStErro');
+  el.textContent = msg;
+  el.style.display = 'block';
 }
 
 function opcoesClientes(selectedId){
