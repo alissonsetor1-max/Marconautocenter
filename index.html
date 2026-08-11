@@ -132,9 +132,9 @@
   .orc-totais { display:flex; justify-content:space-between; padding:6px 0; font-size:.9rem; }
   .orc-totais.total { font-size:1.1rem; font-weight:700; color:hsl(45 68% 60%); border-top:1px solid hsl(45 20% 20%); margin-top:6px; padding-top:10px; }
 
-  #orcamentoPreview { display:none; background:#fff; color:#000; border-radius:12px; padding:28px; font-family: Arial, Helvetica, sans-serif; }
-  #orcamentoPreview, #orcamentoPreview * { font-family: Arial, Helvetica, sans-serif !important; font-weight: 700 !important; color-scheme: light; }
-  #orcamentoPreview.show { display:block; }
+  .print-doc { display:none; background:#fff; color:#000; border-radius:12px; padding:28px; font-family: Arial, Helvetica, sans-serif; }
+  .print-doc, .print-doc * { font-family: Arial, Helvetica, sans-serif !important; font-weight: 700 !important; color-scheme: light; }
+  .print-doc.show { display:block; }
   .doc-header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #b8860b; padding-bottom:14px; margin-bottom:18px; }
   .doc-header h1 { color:#000; font-size:1.4rem; }
   .doc-header .empresa-sub { color:#333; font-size:.75rem; margin-top:2px; }
@@ -160,10 +160,11 @@
   @media print {
     @page { margin: 15mm; }
     body { background:#fff; padding:0; margin:0; }
-    .no-print, .topbar, .sidebar, .sidebar-overlay { display:none !important; }
+    .no-print, .topbar, .sidebar, .sidebar-overlay, .modal-overlay { display:none !important; }
+    .print-doc.show { display:block !important; }
     .app-body { display:block !important; }
     .main-content { width:100% !important; }
-    #orcamentoPreview { display:block !important; border-radius:0; padding:12mm !important; margin:0 auto; }
+    .print-doc { border-radius:0; padding:12mm !important; margin:0 auto; }
     .view { max-width:100% !important; padding:0 !important; margin:0 !important; }
   }
 
@@ -395,8 +396,15 @@
 
       <div class="orc-card">
         <h3>Peças</h3>
+        <label>Adicionar do estoque cadastrado</label>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <select id="orcPecaEstoquePicker" style="flex:1">
+            <option value="">Selecione uma peça cadastrada...</option>
+          </select>
+          <button type="button" class="btn btn-add" onclick="addPecaOrcDoEstoque()" style="flex-shrink:0">Adicionar</button>
+        </div>
         <div id="orcPecasList"></div>
-        <button class="btn btn-add" onclick="addPecaOrc()">+ Adicionar peça</button>
+        <button class="btn btn-add" onclick="addPecaOrc()">+ Adicionar peça avulsa (fora do estoque)</button>
       </div>
 
       <div class="orc-card">
@@ -422,7 +430,7 @@
     </div>
 
     <!-- PREVIEW / IMPRESSÃO -->
-    <div id="orcamentoPreview">
+    <div id="orcamentoPreview" class="print-doc">
       <div class="doc-header">
         <div style="display:flex;align-items:center;gap:12px">
           <img id="orcPLogo" src="" alt="" style="display:none;height:80px;max-width:240px;object-fit:contain">
@@ -525,6 +533,61 @@
       <button class="btn btn-add" onclick="salvarAssinatura()">Salvar assinatura</button>
     </div>
   </div>
+</div>
+
+<!-- IMPRESSÃO DE ORDEM DE SERVIÇO (fora dos modais para não ser escondida na hora de imprimir) -->
+<div id="osPreview" class="print-doc">
+  <div class="doc-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <img id="osPLogo" src="" alt="" style="display:none;height:68px;max-width:200px;object-fit:contain">
+      <h1 id="osPEmpNome">Marcon Auto Center</h1>
+    </div>
+    <div class="os-numero">
+      <div class="n">ORDEM DE SERVIÇO</div>
+      <div class="d" id="osPNumero"></div>
+      <div class="d" id="osPData"></div>
+      <div class="d" id="osPStatus"></div>
+    </div>
+  </div>
+
+  <div class="doc-section">
+    <h3>Cliente e Veículo</h3>
+    <div class="doc-grid">
+      <div><b>Cliente:</b> <span id="osPCliNome"></span></div>
+      <div><b>Telefone:</b> <span id="osPCliTel"></span></div>
+      <div><b>Veículo:</b> <span id="osPVeiculo"></span></div>
+      <div><b>Placa:</b> <span id="osPPlaca"></span></div>
+      <div><b>KM:</b> <span id="osPKm"></span></div>
+      <div><b>Mecânico:</b> <span id="osPMecanico"></span></div>
+    </div>
+  </div>
+
+  <div class="doc-section">
+    <h3>Problema relatado / Diagnóstico</h3>
+    <div style="font-size:.85rem"><b>Relato:</b> <span id="osPProblema"></span></div>
+    <div style="font-size:.85rem;margin-top:4px"><b>Diagnóstico:</b> <span id="osPDiagnostico"></span></div>
+  </div>
+
+  <div class="doc-section">
+    <h3>Peças utilizadas</h3>
+    <table class="doc-table">
+      <thead><tr><th>Descrição</th><th class="num">Qtd</th><th class="num">Preço unit.</th><th class="num">Subtotal</th></tr></thead>
+      <tbody id="osPPecasBody"></tbody>
+    </table>
+  </div>
+
+  <div class="doc-totais">
+    <div><span>Total peças</span><span id="osPTotalPecas"></span></div>
+    <div><span>Total mão de obra</span><span id="osPTotalMaoObra"></span></div>
+    <div class="final"><span>TOTAL</span><span id="osPTotalGeral"></span></div>
+  </div>
+
+  <div class="doc-section" id="osPAssinaturaBox" style="margin-top:24px">
+    <h3>Assinatura do cliente</h3>
+    <img id="osPAssinaturaImg" src="" style="max-height:100px;object-fit:contain">
+  </div>
+
+  <div class="doc-footer">Ordem de Serviço gerada por Marcon Auto Center</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -771,6 +834,133 @@ async function salvarAtalhoVeiculo(){
 }
 
 /* ---------------- AVISO AUTOMÁTICO: OS concluída ---------------- */
+/* ---------------- PEÇAS NA OS (com baixa automática de estoque) ---------------- */
+let osItensPecasAtual = []; // [{peca_id, nome, qtd, preco}]
+
+function renderOsPecasList(){
+  const list = document.getElementById('osPecasList');
+  if(!list) return;
+  list.innerHTML = osItensPecasAtual.length ? osItensPecasAtual.map((item, idx)=>`
+    <div class="item-row" style="grid-template-columns:1fr 60px 90px 90px 30px">
+      <div style="font-size:.85rem;align-self:center">${escapeHtml(item.nome)}</div>
+      <div><input type="number" min="1" value="${item.qtd}" onchange="alterarQtdPecaOs(${idx}, this.value)"></div>
+      <div style="font-size:.8rem;color:#aaa;align-self:center">${formatCurrency(item.preco)}</div>
+      <div style="font-size:.8rem;color:#999;align-self:center">${formatCurrency(item.qtd * item.preco)}</div>
+      <button type="button" class="btn btn-del" onclick="removerPecaOs(${idx})">×</button>
+    </div>
+  `).join('') : `<div style="font-size:.8rem;color:#888">Nenhuma peça adicionada ainda.</div>`;
+  atualizarTotalPecasOs();
+}
+
+function atualizarTotalPecasOs(){
+  const total = osItensPecasAtual.reduce((s,i)=> s + (i.qtd * i.preco), 0);
+  document.getElementById('osPecasTotalLabel').textContent = formatCurrency(total);
+  document.getElementById('f_valor_pecas').value = total.toFixed(2).replace('.',',');
+}
+
+function addPecaOsDoEstoque(){
+  const sel = document.getElementById('osPecaEstoquePicker');
+  const pecaId = sel.value;
+  if(!pecaId) return;
+  const peca = db.pecas.find(p=>p.id===pecaId);
+  if(!peca) return;
+
+  const existente = osItensPecasAtual.find(i=>i.peca_id === pecaId);
+  if(existente){
+    existente.qtd += 1;
+  } else {
+    osItensPecasAtual.push({ peca_id: pecaId, nome: peca.nome, qtd: 1, preco: peca.preco_venda || 0 });
+  }
+  renderOsPecasList();
+  sel.value = '';
+}
+
+function alterarQtdPecaOs(idx, valor){
+  const qtd = parseInt(valor) || 1;
+  osItensPecasAtual[idx].qtd = Math.max(1, qtd);
+  renderOsPecasList();
+}
+
+function removerPecaOs(idx){
+  osItensPecasAtual.splice(idx, 1);
+  renderOsPecasList();
+}
+
+/* Aplica a diferença de estoque no banco: se aumentou o uso de uma peça, tira do estoque;
+   se diminuiu (ou removeu), devolve. Compara a lista antiga (o que já tinha sido baixado)
+   com a nova lista que está sendo salva agora. */
+async function aplicarBaixaEstoque(itensAntigos, itensNovos){
+  const mapaAntigo = {};
+  (itensAntigos||[]).forEach(i => { mapaAntigo[i.peca_id] = (mapaAntigo[i.peca_id]||0) + i.qtd; });
+  const mapaNovo = {};
+  (itensNovos||[]).forEach(i => { mapaNovo[i.peca_id] = (mapaNovo[i.peca_id]||0) + i.qtd; });
+
+  const todosIds = new Set([...Object.keys(mapaAntigo), ...Object.keys(mapaNovo)]);
+  for(const pecaId of todosIds){
+    const antigo = mapaAntigo[pecaId] || 0;
+    const novo = mapaNovo[pecaId] || 0;
+    const delta = novo - antigo; // positivo = usar mais (baixar estoque), negativo = devolver ao estoque
+    if(delta === 0) continue;
+
+    const peca = db.pecas.find(p=>p.id===pecaId);
+    const estoqueAtual = peca ? (peca.estoque||0) : 0;
+    const novoEstoque = estoqueAtual - delta;
+    const { error } = await sb.from('pecas').update({ estoque: novoEstoque }).eq('id', pecaId);
+    if(error){ console.error('Erro ao ajustar estoque da peça', pecaId, error); }
+  }
+}
+
+/* ---------------- IMPRIMIR ORDEM DE SERVIÇO ---------------- */
+function imprimirOS(osId){
+  const o = db.os.find(o=>o.id===osId);
+  if(!o) return;
+  const cliente = db.clientes.find(c=>c.id===o.cliente_id);
+  const veiculo = db.veiculos.find(v=>v.id===o.veiculo_id);
+  const mecanico = db.mecanicos.find(m=>m.id===o.mecanico_id);
+
+  document.getElementById('osPEmpNome').textContent = document.getElementById('orcEmpNome') ? (document.getElementById('orcEmpNome').value || 'Marcon Auto Center') : 'Marcon Auto Center';
+  if(logoAtualBase64){ document.getElementById('osPLogo').src = logoAtualBase64; document.getElementById('osPLogo').style.display='inline-block'; document.getElementById('osPEmpNome').style.display='none'; }
+  else { document.getElementById('osPLogo').style.display='none'; document.getElementById('osPEmpNome').style.display=''; }
+
+  document.getElementById('osPNumero').textContent = o.numero ? ('OS #'+o.numero) : '';
+  document.getElementById('osPData').textContent = o.data_entrada ? new Date(o.data_entrada).toLocaleDateString('pt-BR') : '';
+  document.getElementById('osPStatus').textContent = (osStatusMap[o.status]||{label:o.status}).label;
+
+  document.getElementById('osPCliNome').textContent = cliente?.nome || '-';
+  document.getElementById('osPCliTel').textContent = cliente?.telefone || '-';
+  document.getElementById('osPVeiculo').textContent = veiculo ? `${veiculo.marca||''} ${veiculo.modelo||''} ${veiculo.ano||''}`.trim() : '-';
+  document.getElementById('osPPlaca').textContent = veiculo ? (veiculo.placa||'-').toUpperCase() : '-';
+  document.getElementById('osPKm').textContent = veiculo?.quilometragem || '-';
+  document.getElementById('osPMecanico').textContent = mecanico?.nome || '-';
+
+  document.getElementById('osPProblema').textContent = o.descricao_problema || '-';
+  document.getElementById('osPDiagnostico').textContent = o.diagnostico || '-';
+
+  const itens = o.itens_pecas || [];
+  const pecasBody = document.getElementById('osPPecasBody');
+  pecasBody.innerHTML = itens.length ? itens.map(i=>`
+    <tr><td>${escapeHtml(i.nome)}</td><td class="num">${i.qtd}</td><td class="num">${formatCurrency(i.preco)}</td><td class="num">${formatCurrency(i.qtd*i.preco)}</td></tr>
+  `).join('') : `<tr><td colspan="4">Nenhuma peça registrada</td></tr>`;
+
+  document.getElementById('osPTotalPecas').textContent = formatCurrency(o.valor_pecas);
+  document.getElementById('osPTotalMaoObra').textContent = formatCurrency(o.valor_mao_obra);
+  document.getElementById('osPTotalGeral').textContent = formatCurrency(o.valor_total);
+
+  if(o.assinatura_cliente){
+    document.getElementById('osPAssinaturaImg').src = o.assinatura_cliente;
+    document.getElementById('osPAssinaturaBox').style.display = 'block';
+  } else {
+    document.getElementById('osPAssinaturaBox').style.display = 'none';
+  }
+
+  document.querySelectorAll('.print-doc').forEach(el => el.classList.remove('show'));
+  document.getElementById('osPreview').classList.add('show');
+  setTimeout(()=>{
+    window.print();
+    document.getElementById('osPreview').classList.remove('show');
+  }, 150);
+}
+
 function avisarStatusConcluido(valor){
   document.getElementById('avisoOsConcluidaBox').style.display = (valor === 'concluida') ? 'block' : 'none';
 }
@@ -995,9 +1185,31 @@ function renderMecanicos(){
 function renderPecas(){
   const body = document.getElementById('pecasBody');
   body.innerHTML = db.pecas.length ? db.pecas.map(p=>`
-    <tr><td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.categoria||'peca')}</td><td>${formatCurrency(p.custo)}</td><td>${formatCurrency(p.preco_venda)}</td><td>${escapeHtml(p.estoque??0)}</td>
+    <tr><td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.categoria||'peca')}</td><td>${formatCurrency(p.custo)}</td><td>${formatCurrency(p.preco_venda)}</td>
+    <td>
+      <input type="number" value="${p.estoque??0}" style="width:70px;background:#0e0e0e;border:1px solid hsl(45 20% 22%);color:#e8e0d0;padding:5px 8px;border-radius:6px"
+        onchange="ajustarEstoquePeca('${p.id}', this.value, this)">
+    </td>
     <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('peca','${p.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('pecas','${p.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="6">Nenhuma peça cadastrada.</td></tr>`;
+}
+
+async function ajustarEstoquePeca(pecaId, novoValor, inputEl){
+  const estoque = parseInt(novoValor);
+  if(isNaN(estoque) || estoque < 0){ alert('Informe um número válido.'); return; }
+  inputEl.disabled = true;
+  try{
+    const { error } = await sb.from('pecas').update({ estoque }).eq('id', pecaId);
+    if(error) throw error;
+    const peca = db.pecas.find(p=>p.id===pecaId);
+    if(peca) peca.estoque = estoque;
+    showToast('Estoque atualizado.');
+  } catch(err){
+    console.error(err);
+    alert('Não foi possível atualizar o estoque: ' + err.message);
+  } finally {
+    inputEl.disabled = false;
+  }
 }
 
 function renderAgendamentos(){
@@ -1046,7 +1258,11 @@ function renderOS(){
   body.innerHTML = db.os.length ? db.os.map(o=>`
     <tr><td>${escapeHtml(o.numero||'-')}</td><td>${escapeHtml(clienteNome(o.cliente_id))}</td><td>${escapeHtml(veiculoLabel(o.veiculo_id))}</td><td>${escapeHtml(mecanicoNome(o.mecanico_id))}</td>
     <td>${statusBadge(o.status||'aberta', osStatusMap)}</td><td>${formatCurrency(o.valor_total)}</td>
-    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
+    <td class="actions-cell">
+      <button class="btn btn-secondary" onclick="imprimirOS('${o.id}')" title="Imprimir"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+      <button class="btn btn-edit" onclick="abrirModal('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>
+      <button class="btn btn-del" onclick="excluir('os','${o.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button>
+    </td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="7">Nenhuma OS cadastrada.</td></tr>`;
 }
 
@@ -1609,8 +1825,20 @@ function abrirModal(tipo, id){
       <label style="margin-top:8px">Mecânico</label><select id="f_mecanico_id"><option value="">-</option>${opcoesMecanicos(registro?.mecanico_id)}</select>
       <label>Descrição do problema</label><textarea id="f_descricao_problema">${escapeHtml(registro?.descricao_problema||'')}</textarea>
       <label>Diagnóstico</label><textarea id="f_diagnostico">${escapeHtml(registro?.diagnostico||'')}</textarea>
-      <div class="grid2">
-        <div><label>Valor peças</label><input id="f_valor_pecas" type="text" inputmode="decimal" placeholder="0,00" value="${escapeHtml(registro?.valor_pecas??0)}"></div>
+
+      <label style="margin-top:8px">Peças utilizadas (baixa automática do estoque ao salvar)</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <select id="osPecaEstoquePicker" style="flex:1">
+          <option value="">Selecione uma peça cadastrada...</option>
+          ${db.pecas.map(p=>`<option value="${p.id}">${escapeHtml(p.nome)} — ${formatCurrency(p.preco_venda)} (estoque: ${p.estoque??0})</option>`).join('')}
+        </select>
+        <button type="button" class="btn btn-add" onclick="addPecaOsDoEstoque()" style="flex-shrink:0">Adicionar</button>
+      </div>
+      <div id="osPecasList"></div>
+      <div style="text-align:right;font-size:.85rem;color:#ccc;margin-top:4px">Total peças: <b id="osPecasTotalLabel" style="color:hsl(45 68% 65%)">R$ 0,00</b></div>
+
+      <div class="grid2" style="margin-top:10px">
+        <div><label>Valor peças (calculado)</label><input id="f_valor_pecas" type="text" value="0,00" disabled style="opacity:.7"></div>
         <div><label>Valor mão de obra</label><input id="f_valor_mao_obra" type="text" inputmode="decimal" placeholder="0,00" value="${escapeHtml(registro?.valor_mao_obra??0)}"></div>
       </div>
       <label>Status</label>
@@ -1621,6 +1849,8 @@ function abrirModal(tipo, id){
         Avisar o cliente que o veículo está pronto?
         <button type="button" class="btn btn-wpp" style="width:100%;margin-top:8px" onclick="enviarAvisoOsConcluida()">Enviar aviso pelo WhatsApp</button>
       </div>
+
+      ${id ? `<button type="button" class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="imprimirOS('${id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir Ordem de Serviço</button>` : ''}
 
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid hsl(45 20% 20%)">
         <label>Assinatura do cliente (autorização do serviço)</label>
@@ -1639,6 +1869,11 @@ function abrirModal(tipo, id){
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('show');
+
+  if(tipo === 'os'){
+    osItensPecasAtual = (registro?.itens_pecas && Array.isArray(registro.itens_pecas)) ? JSON.parse(JSON.stringify(registro.itens_pecas)) : [];
+    renderOsPecasList();
+  }
 }
 
 function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
@@ -1670,11 +1905,12 @@ async function salvarModal(){
     obj = { cliente_id:val('f_cliente_id'), veiculo_id:val('f_veiculo_id'), mecanico_id:val('f_mecanico_id'), data:val('f_data'), horario:val('f_horario'), tipo_servico:val('f_tipo_servico'), descricao:val('f_descricao'), status:val('f_status') };
   } else if(tipo==='os'){
     if(!val('f_cliente_id') || !val('f_veiculo_id')){ alert('Selecione cliente e veículo.'); return; }
-    const valor_pecas = parseNumeroBR(val('f_valor_pecas'));
+    const valor_pecas = osItensPecasAtual.reduce((s,i)=> s + (i.qtd*i.preco), 0);
     const valor_mao_obra = parseNumeroBR(val('f_valor_mao_obra'));
     // valor_total é coluna calculada automaticamente no banco (não enviar).
     obj = { numero:val('f_numero'), cliente_id:val('f_cliente_id'), veiculo_id:val('f_veiculo_id'), mecanico_id:val('f_mecanico_id')||null,
       descricao_problema:val('f_descricao_problema'), diagnostico:val('f_diagnostico'),
+      itens_pecas: osItensPecasAtual,
       valor_pecas, valor_mao_obra, status:val('f_status') };
   }
 
@@ -1685,10 +1921,17 @@ async function salvarModal(){
     if(id){
       const { error } = await sb.from(tabelaSupabase).update(obj).eq('id', id);
       if(error) throw error;
+      if(tipo === 'os'){
+        const registroAntigo = db.os.find(o=>o.id===id);
+        await aplicarBaixaEstoque(registroAntigo?.itens_pecas, osItensPecasAtual);
+      }
     } else {
       obj.empresa_id = meuPerfil.empresa_id;
       const { error } = await sb.from(tabelaSupabase).insert(obj);
       if(error) throw error;
+      if(tipo === 'os'){
+        await aplicarBaixaEstoque([], osItensPecasAtual);
+      }
     }
     fecharModal();
     await carregarTudo();
@@ -1760,6 +2003,7 @@ function preencherSelectsOrcamento(){
   const selOs = document.getElementById('orcOsVinculada');
   const selCli = document.getElementById('orcClienteSelect');
   const selVei = document.getElementById('orcVeiculoSelect');
+  const selPeca = document.getElementById('orcPecaEstoquePicker');
   if(!selOs) return;
 
   selOs.innerHTML = '<option value="">— Preencher manualmente —</option>' +
@@ -1768,6 +2012,32 @@ function preencherSelectsOrcamento(){
     db.clientes.map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
   selVei.innerHTML = '<option value="">— Preencher manualmente —</option>' +
     db.veiculos.map(v=>`<option value="${v.id}">${escapeHtml((v.placa||'').toUpperCase())} - ${escapeHtml(v.marca||'')} ${escapeHtml(v.modelo||'')}</option>`).join('');
+
+  if(selPeca){
+    selPeca.innerHTML = '<option value="">Selecione uma peça cadastrada...</option>' +
+      db.pecas.map(p=>`<option value="${p.id}">${escapeHtml(p.nome)} — ${formatCurrency(p.preco_venda)}${p.estoque!=null ? ' (estoque: '+p.estoque+')' : ''}</option>`).join('');
+  }
+}
+
+function addPecaOrcDoEstoque(){
+  const sel = document.getElementById('orcPecaEstoquePicker');
+  const pecaId = sel.value;
+  if(!pecaId) return;
+  const peca = db.pecas.find(p=>p.id===pecaId);
+  if(!peca) return;
+
+  // Se já existe uma linha vazia (não usada ainda), reaproveita ela em vez de criar outra.
+  const linhaVazia = Array.from(document.querySelectorAll('#orcPecasList .item-row')).find(row => !row.querySelector('.orcPecaNome').value.trim());
+  if(linhaVazia){
+    linhaVazia.querySelector('.orcPecaNome').value = peca.nome;
+    linhaVazia.querySelector('.orcPecaQtd').value = 1;
+    linhaVazia.querySelector('.orcPecaPreco').value = peca.preco_venda || 0;
+  } else {
+    addPecaOrc(peca.nome, 1, peca.preco_venda || 0);
+  }
+  calcularTotaisOrc();
+  sel.value = '';
+  showToast('Peça adicionada ao orçamento.');
 }
 
 function preencherCliente(){
