@@ -252,9 +252,12 @@
 
     /* Quando existe um documento específico marcado para impressão (.print-doc.show), ele é o ÚNICO
        conteúdo que deve aparecer no papel — a tela que estava ativa por trás (Dashboard, OS, etc.)
-       precisa ficar oculta, senão ela "vaza" para a impressão junto com a ordem de serviço. */
-    body:has(.print-doc.show) .view:not(.print-doc),
-    body.printing-doc .view:not(.print-doc) { display:none !important; }
+       precisa ficar oculta, senão ela "vaza" para a impressão junto com a ordem de serviço.
+       Exceção: se o próprio print-doc estiver DENTRO da tela ativa (caso do Orçamento, que
+       fica dentro de #view-orcamento em vez de ser um elemento irmão como a OS), a tela não
+       pode ser escondida, senão o conteúdo interno some junto e a impressão sai em branco. */
+    body:has(.print-doc.show) .view:not(.print-doc):not(:has(.print-doc.show)),
+    body.printing-doc .view:not(.print-doc):not(:has(.print-doc.show)) { display:none !important; }
     body:has(.print-doc.show) #app, body.printing-doc #app,
     body:has(.print-doc.show) .app-body, body.printing-doc .app-body,
     body:has(.print-doc.show) .main-content, body.printing-doc .main-content {
@@ -612,7 +615,7 @@
 
     <div class="no-print" id="orcPostGerarBtns" style="display:none">
       <button class="btn btn-pdf" id="orcBtnBaixarPdf" onclick="baixarPDFClick()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar PDF</button>
-      <button class="btn btn-secondary" onclick="window.print()"><svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
+      <button class="btn btn-secondary" onclick="imprimirDocumentoAtual()"><svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
       <button class="btn btn-add" style="width:100%;margin-top:10px" onclick="voltarEdicaoOrc()"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Voltar e editar</button>
     </div>
   </div>
@@ -1069,6 +1072,15 @@ async function aplicarBaixaEstoque(itensAntigos, itensNovos){
     const { error } = await sb.from('pecas').update({ estoque: novoEstoque }).eq('id', pecaId);
     if(error){ console.error('Erro ao ajustar estoque da peça', pecaId, error); }
   }
+}
+
+/* ---------------- IMPRIMIR DOCUMENTO ATUAL (ex: orçamento já gerado em tela) ---------------- */
+function imprimirDocumentoAtual(){
+  document.body.classList.add('printing-doc');
+  setTimeout(()=>{
+    window.print();
+    document.body.classList.remove('printing-doc');
+  }, 50);
 }
 
 /* ---------------- IMPRIMIR ORDEM DE SERVIÇO ---------------- */
