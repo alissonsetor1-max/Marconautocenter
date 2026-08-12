@@ -354,7 +354,7 @@
     <tbody id="dashMecanicosBody"></tbody></table>
 
     <div class="section-header"><h2>Ordens de Serviço recentes</h2></div>
-    <table class="responsive-stack"><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Valor</th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Valor</th><th></th></tr></thead>
     <tbody id="dashOsBody"></tbody></table>
   </div>
 
@@ -1316,8 +1316,9 @@ function renderDashboard(){
   const recentes = [...db.os].sort((a,b)=> (b.data_entrada||'').localeCompare(a.data_entrada||'')).slice(0,6);
   body.innerHTML = recentes.length ? recentes.map(o=>`
     <tr><td data-label="Número">${escapeHtml(o.numero||'-')}</td><td data-label="Cliente">${escapeHtml(clienteNome(o.cliente_id))}</td><td data-label="Veículo">${escapeHtml(veiculoLabel(o.veiculo_id))}</td>
-    <td data-label="Status">${statusBadge(o.status, osStatusMap)}</td><td data-label="Valor">${formatCurrency(o.valor_total)}</td></tr>
-  `).join('') : `<tr class="empty-row"><td colspan="5">Nenhuma OS cadastrada ainda.</td></tr>`;
+    <td data-label="Status">${statusBadge(o.status, osStatusMap)}</td><td data-label="Valor">${formatCurrency(o.valor_total)}</td>
+    <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('os','${o.id}')" title="Abrir esta OS"><svg class="icon-sm" viewBox="0 0 24 24" style="margin-right:0"><path d="M9 18l6-6-6-6"/></svg></button></td></tr>
+  `).join('') : `<tr class="empty-row"><td colspan="6">Nenhuma OS cadastrada ainda.</td></tr>`;
 }
 
 function renderClientes(){
