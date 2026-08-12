@@ -96,8 +96,22 @@
     .busca-placa-wrap input::placeholder { font-size:.78rem; }
     .topbar .user span#userLabel { display:none; } /* nome some no celular, fica só o botão Sair */
 
-    /* Tabelas com muitas colunas ganham rolagem horizontal (dentro da própria tela) em vez de espremer o conteúdo */
-    table { min-width:640px; }
+    /* Tabelas: no celular viram cards empilhados (mesmo estilo dos cards de OS) em vez de
+       precisar arrastar para o lado. Primeira coluna vira o "título" do card; o resto
+       aparece como rótulo + valor. */
+    table:not(.responsive-stack) { min-width:640px; }
+    table.responsive-stack { border:none; box-shadow:none; background:transparent; border-collapse:separate; }
+    table.responsive-stack thead { display:none; }
+    table.responsive-stack, table.responsive-stack tbody { display:block; width:100%; }
+    table.responsive-stack tr { display:block; background:#151515; border:1px solid hsl(45 20% 16%); border-radius:10px; padding:14px 16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+    table.responsive-stack tr.empty-row { background:transparent; border:none; box-shadow:none; padding:26px 0; text-align:center; }
+    table.responsive-stack tr.empty-row td { border:none; padding:0; }
+    table.responsive-stack td { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 0; border-top:1px solid hsl(45 20% 13%); font-size:.83rem; color:#d8d0bc; }
+    table.responsive-stack td:first-child { border-top:none; padding-top:0; padding-bottom:10px; margin-bottom:2px; border-bottom:1px solid hsl(45 20% 14%); font-weight:700; color:hsl(45 68% 65%); font-size:.95rem; }
+    table.responsive-stack td:first-child::before { display:none; }
+    table.responsive-stack td::before { content:attr(data-label); font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:#8a8270; flex-shrink:0; }
+    table.responsive-stack td.actions-cell { border-top:1px solid hsl(45 20% 14%); margin-top:4px; padding-top:12px; justify-content:flex-end; }
+    table.responsive-stack td.actions-cell::before { display:none; }
 
     /* Grids de formulário: em telas pequenas, uma coluna só, evitando campos cortados/descentralizados */
     .grid2 { grid-template-columns:1fr !important; gap:10px 0 !important; }
@@ -336,39 +350,39 @@
     <div class="cards-grid" id="dashKpis"></div>
 
     <div class="section-header"><h2>Desempenho por mecânico</h2></div>
-    <table style="margin-bottom:20px"><thead><tr><th>Mecânico</th><th>OS concluídas</th><th>Faturamento</th><th>Ticket médio</th></tr></thead>
+    <table class="responsive-stack" style="margin-bottom:20px"><thead><tr><th>Mecânico</th><th>OS concluídas</th><th>Faturamento</th><th>Ticket médio</th></tr></thead>
     <tbody id="dashMecanicosBody"></tbody></table>
 
     <div class="section-header"><h2>Ordens de Serviço recentes</h2></div>
-    <table><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Valor</th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Número</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Valor</th></tr></thead>
     <tbody id="dashOsBody"></tbody></table>
   </div>
 
   <!-- CLIENTES -->
   <div class="view" id="view-clientes">
     <div class="section-header"><h2>Clientes</h2><button class="btn btn-add" onclick="abrirModal('cliente')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo cliente</button></div>
-    <table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Documento</th><th></th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Documento</th><th></th></tr></thead>
     <tbody id="clientesBody"></tbody></table>
   </div>
 
   <!-- VEICULOS -->
   <div class="view" id="view-veiculos">
     <div class="section-header"><h2>Veículos</h2><button class="btn btn-add" onclick="abrirModal('veiculo')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo veículo</button></div>
-    <table><thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Ano</th><th>Cliente</th><th>Valor FIPE</th><th></th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Ano</th><th>Cliente</th><th>Valor FIPE</th><th></th></tr></thead>
     <tbody id="veiculosBody"></tbody></table>
   </div>
 
   <!-- MECANICOS -->
   <div class="view" id="view-mecanicos">
     <div class="section-header"><h2>Mecânicos</h2><button class="btn btn-add" onclick="abrirModal('mecanico')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo mecânico</button></div>
-    <table><thead><tr><th>Nome</th><th>Especialidade</th><th>Telefone</th><th>Status</th><th></th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Nome</th><th>Especialidade</th><th>Telefone</th><th>Status</th><th></th></tr></thead>
     <tbody id="mecanicosBody"></tbody></table>
   </div>
 
   <!-- PECAS -->
   <div class="view" id="view-pecas">
     <div class="section-header"><h2>Peças / Estoque</h2><button class="btn btn-add" onclick="abrirModal('peca')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova peça</button></div>
-    <table><thead><tr><th>Nome</th><th>Categoria</th><th>Custo</th><th>Venda</th><th>Estoque</th><th></th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Nome</th><th>Categoria</th><th>Custo</th><th>Venda</th><th>Estoque</th><th></th></tr></thead>
     <tbody id="pecasBody"></tbody></table>
   </div>
 
@@ -401,7 +415,7 @@
   <!-- AGENDAMENTOS -->
   <div class="view" id="view-agendamentos">
     <div class="section-header"><h2>Agendamentos</h2><button class="btn btn-add" onclick="abrirModal('agendamento')"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo agendamento</button></div>
-    <table><thead><tr><th>Data</th><th>Horário</th><th>Cliente</th><th>Veículo</th><th>Mecânico</th><th>Status</th><th></th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Data</th><th>Horário</th><th>Cliente</th><th>Veículo</th><th>Mecânico</th><th>Status</th><th></th></tr></thead>
     <tbody id="agendamentosBody"></tbody></table>
   </div>
 
@@ -433,7 +447,7 @@
 
       <div class="orc-card" id="orcamentosSalvosCard" style="display:none">
         <h3>Orçamentos salvos</h3>
-        <table style="font-size:.85rem">
+        <table class="responsive-stack" style="font-size:.85rem">
           <thead><tr><th>Data</th><th>Cliente</th><th>Status</th><th>Total</th><th></th></tr></thead>
           <tbody id="orcamentosSalvosBody"></tbody>
         </table>
@@ -606,7 +620,7 @@
   <!-- USUÁRIOS (somente admin) -->
   <div class="view" id="view-usuarios">
     <div class="section-header"><h2>Usuários</h2><button class="btn btn-add" onclick="abrirModalUsuario()"><svg class="icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo usuário</button></div>
-    <table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th></th></tr></thead>
+    <table class="responsive-stack"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th></th></tr></thead>
     <tbody id="usuariosBody"></tbody></table>
 
     <div class="orc-card" style="margin-top:20px">
@@ -718,9 +732,13 @@ const SUPABASE_URL = 'https://hemnqexwmttttgcqpkem.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_NJgOnB8zv6v8b_24kMc-kg_GhJEFvH-';
 
 /* ---------------- ATALHO / INSTALAÇÃO (PWA) ---------------- */
-if('serviceWorker' in navigator){
+if('serviceWorker' in navigator && location.protocol === 'https:'){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('/sw.js').catch(err=>console.warn('SW não registrado:', err));
+    navigator.serviceWorker.register('/sw.js').catch(()=>{
+      // Silenciosamente ignora: em ambientes de pré-visualização (ex: fora do domínio final
+      // do Vercel) o arquivo sw.js pode não existir ainda. No domínio de produção, com o
+      // sw.js publicado na raiz, o registro funciona normalmente.
+    });
   });
 }
 let deferredInstallPrompt = null;
@@ -1291,21 +1309,21 @@ function renderDashboard(){
     .sort((a,b)=> b.total - a.total);
 
   mecBody.innerHTML = linhasMec.length ? linhasMec.map(l=>`
-    <tr><td>${escapeHtml(l.nome)}</td><td>${l.qtd}</td><td>${formatCurrency(l.total)}</td><td>${formatCurrency(l.ticket)}</td></tr>
+    <tr><td data-label="Mecânico">${escapeHtml(l.nome)}</td><td data-label="OS concluídas">${l.qtd}</td><td data-label="Faturamento">${formatCurrency(l.total)}</td><td data-label="Ticket médio">${formatCurrency(l.ticket)}</td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="4">Nenhuma OS concluída com mecânico vinculado ainda.</td></tr>`;
 
   const body = document.getElementById('dashOsBody');
   const recentes = [...db.os].sort((a,b)=> (b.data_entrada||'').localeCompare(a.data_entrada||'')).slice(0,6);
   body.innerHTML = recentes.length ? recentes.map(o=>`
-    <tr><td>${escapeHtml(o.numero||'-')}</td><td>${escapeHtml(clienteNome(o.cliente_id))}</td><td>${escapeHtml(veiculoLabel(o.veiculo_id))}</td>
-    <td>${statusBadge(o.status, osStatusMap)}</td><td>${formatCurrency(o.valor_total)}</td></tr>
+    <tr><td data-label="Número">${escapeHtml(o.numero||'-')}</td><td data-label="Cliente">${escapeHtml(clienteNome(o.cliente_id))}</td><td data-label="Veículo">${escapeHtml(veiculoLabel(o.veiculo_id))}</td>
+    <td data-label="Status">${statusBadge(o.status, osStatusMap)}</td><td data-label="Valor">${formatCurrency(o.valor_total)}</td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="5">Nenhuma OS cadastrada ainda.</td></tr>`;
 }
 
 function renderClientes(){
   const body = document.getElementById('clientesBody');
   body.innerHTML = db.clientes.length ? db.clientes.map(c=>`
-    <tr><td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.telefone||'-')}</td><td>${escapeHtml(c.email||'-')}</td><td>${escapeHtml(c.documento||'-')}</td>
+    <tr><td data-label="Nome">${escapeHtml(c.nome)}</td><td data-label="Telefone">${escapeHtml(c.telefone||'-')}</td><td data-label="E-mail">${escapeHtml(c.email||'-')}</td><td data-label="Documento">${escapeHtml(c.documento||'-')}</td>
     <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('cliente','${c.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('clientes','${c.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum cliente cadastrado.</td></tr>`;
 }
@@ -1313,8 +1331,8 @@ function renderClientes(){
 function renderVeiculos(){
   const body = document.getElementById('veiculosBody');
   body.innerHTML = db.veiculos.length ? db.veiculos.map(v=>`
-    <tr><td>${escapeHtml((v.placa||'').toUpperCase())}</td><td>${escapeHtml(v.marca||'')} ${escapeHtml(v.modelo||'')}</td><td>${escapeHtml(v.ano||'-')}</td><td>${escapeHtml(clienteNome(v.cliente_id))}</td>
-    <td>${v.valor_fipe ? formatCurrency(v.valor_fipe) : '-'}</td>
+    <tr><td data-label="Placa">${escapeHtml((v.placa||'').toUpperCase())}</td><td data-label="Marca/Modelo">${escapeHtml(v.marca||'')} ${escapeHtml(v.modelo||'')}</td><td data-label="Ano">${escapeHtml(v.ano||'-')}</td><td data-label="Cliente">${escapeHtml(clienteNome(v.cliente_id))}</td>
+    <td data-label="Valor FIPE">${v.valor_fipe ? formatCurrency(v.valor_fipe) : '-'}</td>
     <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('veiculo','${v.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('veiculos','${v.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="6">Nenhum veículo cadastrado.</td></tr>`;
 }
@@ -1322,7 +1340,7 @@ function renderVeiculos(){
 function renderMecanicos(){
   const body = document.getElementById('mecanicosBody');
   body.innerHTML = db.mecanicos.length ? db.mecanicos.map(m=>`
-    <tr><td>${escapeHtml(m.nome)}</td><td>${escapeHtml(m.especialidade||'-')}</td><td>${escapeHtml(m.telefone||'-')}</td><td>${statusBadge(m.status||'disponivel', mecStatusMap)}</td>
+    <tr><td data-label="Nome">${escapeHtml(m.nome)}</td><td data-label="Especialidade">${escapeHtml(m.especialidade||'-')}</td><td data-label="Telefone">${escapeHtml(m.telefone||'-')}</td><td data-label="Status">${statusBadge(m.status||'disponivel', mecStatusMap)}</td>
     <td class="actions-cell"><button class="btn btn-edit" onclick="abrirModal('mecanico','${m.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button><button class="btn btn-del" onclick="excluir('mecanicos','${m.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Excluir</button></td></tr>
   `).join('') : `<tr class="empty-row"><td colspan="5">Nenhum mecânico cadastrado.</td></tr>`;
 }
@@ -1330,8 +1348,8 @@ function renderMecanicos(){
 function renderPecas(){
   const body = document.getElementById('pecasBody');
   body.innerHTML = db.pecas.length ? db.pecas.map(p=>`
-    <tr><td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.categoria||'peca')}</td><td>${formatCurrency(p.custo)}</td><td>${formatCurrency(p.preco_venda)}</td>
-    <td>
+    <tr><td data-label="Nome">${escapeHtml(p.nome)}</td><td data-label="Categoria">${escapeHtml(p.categoria||'peca')}</td><td data-label="Custo">${formatCurrency(p.custo)}</td><td data-label="Venda">${formatCurrency(p.preco_venda)}</td>
+    <td data-label="Estoque">
       <input type="number" value="${p.estoque??0}" style="width:74px;background:hsl(0 0% 8%);border:1px solid hsl(45 15% 22% / .7);color:#e8e0d0;padding:7px 10px;border-radius:10px;box-shadow:inset 0 1px 2px rgba(0,0,0,.25);transition:border-color .15s ease,box-shadow .15s ease" onfocus="this.style.outline='none';this.style.borderColor='hsl(45 68% 48%)';this.style.boxShadow='inset 0 1px 2px rgba(0,0,0,.25), 0 0 0 3px hsl(45 68% 50% / .18)'" onblur="this.style.borderColor='hsl(45 15% 22% / .7)';this.style.boxShadow='inset 0 1px 2px rgba(0,0,0,.25)'"
         onchange="ajustarEstoquePeca('${p.id}', this.value, this)">
     </td>
@@ -1368,9 +1386,9 @@ function renderAgendamentos(){
   body.innerHTML = lista.length ? lista.map(a=>{
     const ehAmanha = a.data === amanhaStr;
     return `<tr style="${ehAmanha?'background:hsl(45 40% 12%)':''}">
-      <td>${formatDate(a.data)} ${ehAmanha ? '<span class="badge badge-amber">Amanhã</span>' : ''}</td>
-      <td>${escapeHtml(a.horario||'-')}</td><td>${escapeHtml(clienteNome(a.cliente_id))}</td><td>${escapeHtml(veiculoLabel(a.veiculo_id))}</td><td>${escapeHtml(mecanicoNome(a.mecanico_id))}</td>
-      <td>${statusBadge(a.status||'agendado', agStatusMap)}</td>
+      <td data-label="Data">${formatDate(a.data)} ${ehAmanha ? '<span class="badge badge-amber">Amanhã</span>' : ''}</td>
+      <td data-label="Horário">${escapeHtml(a.horario||'-')}</td><td data-label="Cliente">${escapeHtml(clienteNome(a.cliente_id))}</td><td data-label="Veículo">${escapeHtml(veiculoLabel(a.veiculo_id))}</td><td data-label="Mecânico">${escapeHtml(mecanicoNome(a.mecanico_id))}</td>
+      <td data-label="Status">${statusBadge(a.status||'agendado', agStatusMap)}</td>
       <td class="actions-cell">
         <button class="btn btn-wpp" onclick="enviarConfirmacaoAgendamento('${a.id}')" title="Enviar confirmação por WhatsApp"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
         <button class="btn btn-edit" onclick="abrirModal('agendamento','${a.id}')"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>
@@ -1434,10 +1452,10 @@ function renderUsuarios(){
     const souEu = meuPerfil && u.id === meuPerfil.id;
     const inativo = u.ativo === false;
     return `<tr style="${inativo?'opacity:.5':''}">
-      <td>${escapeHtml(u.nome||'-')}${souEu ? ' <span style="color:#888;font-size:.75rem">(você)</span>' : ''}</td>
-      <td>${escapeHtml(u.email||'-')}</td>
-      <td>${escapeHtml(papelLabel[u.papel]||u.papel)}</td>
-      <td>${inativo ? '<span class="badge badge-red">Inativo</span>' : '<span class="badge badge-green">Ativo</span>'}</td>
+      <td data-label="Nome">${escapeHtml(u.nome||'-')}${souEu ? ' <span style="color:#888;font-size:.75rem">(você)</span>' : ''}</td>
+      <td data-label="E-mail">${escapeHtml(u.email||'-')}</td>
+      <td data-label="Papel">${escapeHtml(papelLabel[u.papel]||u.papel)}</td>
+      <td data-label="Status">${inativo ? '<span class="badge badge-red">Inativo</span>' : '<span class="badge badge-green">Ativo</span>'}</td>
       <td class="actions-cell">
         <button class="btn btn-edit" onclick="abrirModalEditarUsuario('${u.id}')">Editar</button>
         ${souEu ? '' : `<button class="btn btn-del" onclick="alternarAtivoUsuario('${u.id}', ${!inativo})">${inativo ? 'Ativar' : 'Desativar'}</button>`}
@@ -2422,10 +2440,10 @@ function renderOrcamentosSalvos(){
     const d = o.dados || {};
     const data = o.criado_em ? new Date(o.criado_em).toLocaleDateString('pt-BR') : '-';
     return `<tr>
-      <td>${data}</td>
-      <td>${escapeHtml(d.cliNome || '-')}</td>
-      <td>${escapeHtml(statusLabel[o.status]||o.status)}</td>
-      <td>${formatCurrency(o.valor_total)}</td>
+      <td data-label="Data">${data}</td>
+      <td data-label="Cliente">${escapeHtml(d.cliNome || '-')}</td>
+      <td data-label="Status">${escapeHtml(statusLabel[o.status]||o.status)}</td>
+      <td data-label="Total">${formatCurrency(o.valor_total)}</td>
       <td class="actions-cell">
         <button class="btn btn-edit" onclick="carregarOrcamentoSalvo('${o.id}')">Carregar</button>
         <button class="btn btn-del" onclick="excluirOrcamentoSalvo('${o.id}')">Excluir</button>
